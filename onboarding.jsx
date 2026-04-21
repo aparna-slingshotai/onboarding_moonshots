@@ -145,8 +145,8 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
     };
     el.addEventListener('scroll', check, { passive: true });
     // Fire once on mount so step 1's drawer opens even if the user
-    // hasn't scrolled yet — brief delay lets the intro register first.
-    const initialOpen = setTimeout(check, 600);
+    // hasn't scrolled yet — 10s delay lets the intro register first.
+    const initialOpen = setTimeout(check, 10000);
     return () => {
       clearTimeout(initialOpen);
       el.removeEventListener('scroll', check);
