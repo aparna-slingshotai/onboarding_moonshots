@@ -108,9 +108,17 @@ function MapScreen({ answers = {}, onBack }) {
   // anchor the river there so it reads as "the person steps into the river."
   const SOURCE = { x: 188, y: 282 };
   const pathD = buildRiverPath([SOURCE, ...points]);
+  // Per-circle paths: each numbered circle travels from the river's source
+  // to its own landing point, so animation trajectories hug the river.
+  const circlePaths = points.map((_, i) =>
+    buildRiverPath([SOURCE, ...points.slice(0, i + 1)])
+  );
   const BLUE = '#2E7DE7';
   const POOL_R = 46;
   const CHANNEL_W = 58;
+  // Animation cadence.
+  const STEP_DUR = 1.1;   // seconds per circle
+  const STEP_GAP = 0.9;   // head-start between consecutive circles
 
   return (
     <div style={{ width: FRAME_W, height: FRAME_H, background: S.surface, position: 'relative', overflow: 'hidden' }}>
@@ -147,25 +155,17 @@ function MapScreen({ answers = {}, onBack }) {
         ))}
       </svg>
 
-      {/* Dashed numbered circles, sit on top of the river pools */}
-      {points.map(p => (
-        <div
-          key={p.id}
-          style={{
-            position: 'absolute',
-            left: p.x - 20, top: p.y - 20,
-            width: 40, height: 40, borderRadius: 9999,
-            background: S.sunken,
-            border: `1px dashed ${S.muted}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: S.muted,
-            font: `600 18px/1.2 ${S.sans}`,
-            zIndex: 2,
-          }}
-        >
-          {p.id}
-        </div>
-      ))}
+      {/* Numbered circles follow the river from source → their pool, in order.
+          JS-driven animation: rAF loop walks each circle's sub-path via
+          getPointAtLength so the trajectory literally traces the river curve. */}
+      <NumberedCircles
+        points={points}
+        circlePaths={circlePaths}
+        frameW={FRAME_W}
+        frameH={FRAME_H}
+        stepDur={STEP_DUR}
+        stepGap={STEP_GAP}
+      />
 
       {/* Title + subtitle near the bottom */}
       <div style={{
@@ -196,6 +196,88 @@ function MapScreen({ answers = {}, onBack }) {
         </div>
       )}
     </div>
+  );
+}
+
+function NumberedCircles({ points, circlePaths, frameW, frameH, stepDur, stepGap }) {
+  const pathRefs = React.useRef([]);
+  const groupRefs = React.useRef([]);
+
+  React.useEffect(() => {
+    const paths = pathRefs.current;
+    const groups = groupRefs.current;
+    const lengths = paths.map(p => (p ? p.getTotalLength() : 0));
+    const start = performance.now();
+    const totalDur = (points.length - 1) * stepGap + stepDur;
+
+    const tick = () => {
+      const t = (performance.now() - start) / 1000;
+      for (let i = 0; i < points.length; i++) {
+        const g = groups[i];
+        const p = paths[i];
+        if (!g || !p) continue;
+        const beginT = i * stepGap;
+        const endT = beginT + stepDur;
+        if (t < beginT) {
+          g.style.visibility = 'hidden';
+          continue;
+        }
+        const progress = t >= endT ? 1 : (t - beginT) / stepDur;
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const pt = p.getPointAtLength(eased * lengths[i]);
+        g.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+        g.style.visibility = 'visible';
+      }
+      if (t >= totalDur) clearInterval(id);
+    };
+    const id = setInterval(tick, 16);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <svg
+      viewBox={`0 0 ${frameW} ${frameH}`}
+      width={frameW} height={frameH}
+      style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}
+      aria-hidden
+    >
+      <defs>
+        {circlePaths.map((d, i) => (
+          <path
+            key={i}
+            ref={el => (pathRefs.current[i] = el)}
+            d={d}
+            fill="none"
+            stroke="none"
+          />
+        ))}
+      </defs>
+      {points.map((p, i) => (
+        <g
+          key={p.id}
+          ref={el => (groupRefs.current[i] = el)}
+          style={{ visibility: 'hidden' }}
+        >
+          <circle
+            r="20"
+            fill={S.sunken}
+            stroke={S.muted}
+            strokeWidth="1"
+            strokeDasharray="3,3"
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={S.muted}
+            fontFamily={S.sans}
+            fontSize="18"
+            fontWeight="600"
+          >
+            {p.id}
+          </text>
+        </g>
+      ))}
+    </svg>
   );
 }
 
