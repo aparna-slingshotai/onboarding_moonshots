@@ -15,7 +15,7 @@ const STEPS = [
   },
   {
     id: 2,
-    question: "What draws you to Sundial?",
+    question: "What brings you to Ash",
     subtitle: "Pick whatever feels closest. You can choose more than one.",
     kind: "multi",
     options: [
@@ -116,7 +116,7 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
   }, [interaction, scrollFilled]);
 
   // Sheet-mode: auto-open each step's drawer the first time its block scrolls
-  // into view — with a 30s delay after the scroll that revealed it.
+  // into view — with a 20s delay after the scroll that revealed it.
   // Tracked per-id so a dismissed sheet won't re-open on further scroll.
   const [autoOpened, setAutoOpened] = React.useState(new Set());
   React.useEffect(() => {
@@ -141,14 +141,14 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
             next.add(s.id);
             return next;
           });
-          pending.push(setTimeout(() => setOpenStep(s.id), 30000));
+          pending.push(setTimeout(() => setOpenStep(s.id), 20000));
           break;
         }
       }
     };
     el.addEventListener('scroll', check, { passive: true });
     // Also run on mount so step 1's drawer opens automatically after the
-    // 30s delay even if the user never scrolls.
+    // 20s delay even if the user never scrolls.
     check();
     return () => {
       pending.forEach(clearTimeout);
@@ -274,7 +274,7 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
                   const target = el.scrollTop + (nodeTop - scopeTop) - 60;
                   el.scrollTo({ top: target, behavior: 'smooth' });
                 }
-                // Open next step 30s after the scroll completes. The scroll
+                // Open next step 20s after the scroll completes. The scroll
                 // listener also schedules this on a real browser, but adding
                 // it explicitly makes the chain deterministic.
                 setTimeout(() => {
@@ -285,7 +285,7 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
                     return next;
                   });
                   setOpenStep(prev => prev == null ? nextId : prev);
-                }, 30000);
+                }, 20000);
               }, 320); // wait for sheet dismiss
             } else if (el) {
               // Step 4 answered — scroll to CTA
