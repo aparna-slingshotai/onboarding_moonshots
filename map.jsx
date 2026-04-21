@@ -120,6 +120,9 @@ function MapScreen({ answers = {}, onBack }) {
   const STEP_DUR = 1.1;   // seconds per circle
   const STEP_GAP = 0.9;   // head-start between consecutive circles
 
+  const riverRef = React.useRef(null);
+  const poolRefs = React.useRef([]);
+
   return (
     <div style={{ width: FRAME_W, height: FRAME_H, background: S.surface, position: 'relative', overflow: 'hidden' }}>
       {/* Figure + cliff art sits top-left, bleeds off the edges */}
@@ -135,7 +138,7 @@ function MapScreen({ answers = {}, onBack }) {
         }}
       />
 
-      {/* Procedural river: rounded connecting channels + pools at each point */}
+      {/* Procedural river: revealed progressively as the circles travel. */}
       <svg
         viewBox={`0 0 ${FRAME_W} ${FRAME_H}`}
         width={FRAME_W} height={FRAME_H}
@@ -143,6 +146,7 @@ function MapScreen({ answers = {}, onBack }) {
         aria-hidden
       >
         <path
+          ref={riverRef}
           d={pathD}
           stroke={BLUE}
           strokeWidth={CHANNEL_W}
@@ -150,14 +154,22 @@ function MapScreen({ answers = {}, onBack }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {points.map(p => (
-          <circle key={p.id} cx={p.x} cy={p.y} r={POOL_R} fill={BLUE} />
+        {points.map((p, i) => (
+          <circle
+            key={p.id}
+            ref={el => (poolRefs.current[i] = el)}
+            cx={p.x} cy={p.y} r={POOL_R}
+            fill={BLUE}
+            style={{ opacity: 0, transition: 'opacity 240ms ease-out' }}
+          />
         ))}
       </svg>
 
       {/* Numbered circles follow the river from source → their pool, in order.
           JS-driven animation: rAF loop walks each circle's sub-path via
-          getPointAtLength so the trajectory literally traces the river curve. */}
+          getPointAtLength so the trajectory literally traces the river curve.
+          The river ref is threaded through so the blue trail reveals in sync
+          with whichever circle is currently in motion. */}
       <NumberedCircles
         points={points}
         circlePaths={circlePaths}
@@ -165,6 +177,8 @@ function MapScreen({ answers = {}, onBack }) {
         frameH={FRAME_H}
         stepDur={STEP_DUR}
         stepGap={STEP_GAP}
+        riverRef={riverRef}
+        poolRefs={poolRefs}
       />
 
       {/* Title + subtitle near the bottom */}
@@ -199,7 +213,7 @@ function MapScreen({ answers = {}, onBack }) {
   );
 }
 
-function NumberedCircles({ points, circlePaths, frameW, frameH, stepDur, stepGap }) {
+function NumberedCircles({ points, circlePaths, frameW, frameH, stepDur, stepGap, riverRef, poolRefs }) {
   const pathRefs = React.useRef([]);
   const groupRefs = React.useRef([]);
 
@@ -207,11 +221,20 @@ function NumberedCircles({ points, circlePaths, frameW, frameH, stepDur, stepGap
     const paths = pathRefs.current;
     const groups = groupRefs.current;
     const lengths = paths.map(p => (p ? p.getTotalLength() : 0));
+    const river = riverRef?.current;
+    const pools = poolRefs?.current || [];
+    const riverLen = river ? river.getTotalLength() : 0;
+    // Hide the river fully before the first tick so no trail flashes.
+    if (river) {
+      river.style.strokeDasharray = `${riverLen} ${riverLen}`;
+      river.style.strokeDashoffset = `${riverLen}`;
+    }
     const start = performance.now();
     const totalDur = (points.length - 1) * stepGap + stepDur;
 
     const tick = () => {
       const t = (performance.now() - start) / 1000;
+      let maxRevealed = 0;
       for (let i = 0; i < points.length; i++) {
         const g = groups[i];
         const p = paths[i];
@@ -227,6 +250,17 @@ function NumberedCircles({ points, circlePaths, frameW, frameH, stepDur, stepGap
         const pt = p.getPointAtLength(eased * lengths[i]);
         g.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
         g.style.visibility = 'visible';
+        // Track how far along the full river the leading circle has painted.
+        // Each sub-path is a prefix of the full river, so eased * lengths[i]
+        // corresponds directly to a distance along the river.
+        const frontier = eased * lengths[i];
+        if (frontier > maxRevealed) maxRevealed = frontier;
+        // Light up the destination pool once the circle lands.
+        if (progress >= 1 && pools[i]) pools[i].style.opacity = 1;
+      }
+      if (river) {
+        const drawn = Math.min(maxRevealed, riverLen);
+        river.style.strokeDashoffset = `${riverLen - drawn}`;
       }
       if (t >= totalDur) clearInterval(id);
     };
