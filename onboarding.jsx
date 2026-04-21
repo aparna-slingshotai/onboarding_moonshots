@@ -144,7 +144,13 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
       }
     };
     el.addEventListener('scroll', check, { passive: true });
-    return () => el.removeEventListener('scroll', check);
+    // Fire once on mount so step 1's drawer opens even if the user
+    // hasn't scrolled yet — brief delay lets the intro register first.
+    const initialOpen = setTimeout(check, 600);
+    return () => {
+      clearTimeout(initialOpen);
+      el.removeEventListener('scroll', check);
+    };
   }, [interaction, openStep, autoOpened, answers]);
 
   // Override `completed` for scroll + tap modes
