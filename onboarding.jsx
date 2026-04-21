@@ -116,12 +116,14 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
   }, [interaction, scrollFilled]);
 
   // Sheet-mode: auto-open each step's drawer the first time its block scrolls
-  // into view. Tracked per-id so a dismissed sheet won't re-open on further scroll.
+  // into view — with a 30s delay after the scroll that revealed it.
+  // Tracked per-id so a dismissed sheet won't re-open on further scroll.
   const [autoOpened, setAutoOpened] = React.useState(new Set());
   React.useEffect(() => {
     if (interaction !== 'sheet') return;
     const el = scrollRef.current;
     if (!el) return;
+    const pending = [];
     const check = () => {
       if (openStep != null) return;
       const scope = el.getBoundingClientRect();
@@ -133,22 +135,20 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
         if (!node) continue;
         const rect = node.getBoundingClientRect();
         if (rect.top < trigger && rect.bottom > scope.top) {
+          // Claim the slot immediately so further scroll events don't re-schedule.
           setAutoOpened(prev => {
             const next = new Set(prev);
             next.add(s.id);
             return next;
           });
-          setOpenStep(s.id);
+          pending.push(setTimeout(() => setOpenStep(s.id), 30000));
           break;
         }
       }
     };
     el.addEventListener('scroll', check, { passive: true });
-    // Fire once on mount so step 1's drawer opens even if the user
-    // hasn't scrolled yet — 30s delay lets the intro register first.
-    const initialOpen = setTimeout(check, 30000);
     return () => {
-      clearTimeout(initialOpen);
+      pending.forEach(clearTimeout);
       el.removeEventListener('scroll', check);
     };
   }, [interaction, openStep, autoOpened, answers]);
@@ -271,15 +271,18 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
                   const target = el.scrollTop + (nodeTop - scopeTop) - 60;
                   el.scrollTo({ top: target, behavior: 'smooth' });
                 }
-                // Open the next step's drawer after the scroll kicks off.
+                // Open next step 30s after the scroll completes. The scroll
+                // listener also schedules this on a real browser, but adding
+                // it explicitly makes the chain deterministic.
                 setTimeout(() => {
                   setAutoOpened(prev => {
+                    if (prev.has(nextId)) return prev;
                     const next = new Set(prev);
                     next.add(nextId);
                     return next;
                   });
-                  setOpenStep(nextId);
-                }, 450);
+                  setOpenStep(prev => prev == null ? nextId : prev);
+                }, 30000);
               }, 320); // wait for sheet dismiss
             } else if (el) {
               // Step 4 answered — scroll to CTA
