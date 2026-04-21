@@ -147,6 +147,9 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
       }
     };
     el.addEventListener('scroll', check, { passive: true });
+    // Also run on mount so step 1's drawer opens automatically after the
+    // 30s delay even if the user never scrolls.
+    check();
     return () => {
       pending.forEach(clearTimeout);
       el.removeEventListener('scroll', check);
