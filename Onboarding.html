@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sundial · Onboarding</title>
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: #272725;
+      font-family: "Google Sans", ui-sans-serif, system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .stage {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }
+    /* Tweaks panel */
+    .tweaks {
+      position: fixed; right: 16px; bottom: 16px; z-index: 9999;
+      width: 260px;
+      background: #F6F3ED;
+      color: #1A1918;
+      border: 1px solid #DDDAD1;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(26,25,24,0.18);
+      padding: 14px 14px 12px;
+      font: 400 13px/1.4 "Google Sans", system-ui, sans-serif;
+    }
+    .tweaks h4 {
+      margin: 0 0 10px;
+      font: 700 13px/1 "Google Sans", sans-serif;
+      letter-spacing: -0.1px;
+      text-transform: uppercase;
+      letter-spacing: 1.25px;
+      color: #63615D;
+      font-size: 11px;
+    }
+    .tweaks .group { margin-bottom: 12px; }
+    .tweaks .group:last-child { margin-bottom: 0; }
+    .tweaks label {
+      display: block;
+      font: 500 11px/1.2 "Google Sans", sans-serif;
+      letter-spacing: 1.25px;
+      text-transform: uppercase;
+      color: #63615D;
+      margin-bottom: 6px;
+    }
+    .tweaks .pills {
+      display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .tweaks .pill {
+      flex: 1 1 auto;
+      background: transparent;
+      border: 1px solid #DDDAD1;
+      border-radius: 9999px;
+      padding: 7px 10px;
+      font: 500 12px/1 "Google Sans", sans-serif;
+      color: #464543;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms, color 120ms;
+    }
+    .tweaks .pill:hover { background: rgba(26,25,24,0.06); }
+    .tweaks .pill.on {
+      background: #855074;
+      border-color: #855074;
+      color: #EAD7E1;
+    }
+    .tweaks .toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      font: 500 13px/1.2 "Google Sans", sans-serif;
+      color: #1A1918;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .tweaks .toggle input { accent-color: #855074; transform: scale(1.1); }
+    .tweaks input[type="text"] {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid #DDDAD1;
+      background: #EBE7DE; color: #1A1918;
+      font: 400 13px/1.3 "Google Sans", sans-serif;
+      outline: none;
+    }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="primitives.jsx"></script>
+  <script type="text/babel" src="onboarding.jsx"></script>
+  <script type="text/babel" src="map.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "interaction": "sheet",
+      "showCounter": false,
+      "ctaLabel": "Continue",
+      "numberStyle": "dashed",
+      "staggerLayout": true
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [scale, setScale] = React.useState(1);
+      const [tweaksOn, setTweaksOn] = React.useState(false);
+      const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+      const [screen, setScreen] = React.useState('onboarding');
+      const [answers, setAnswers] = React.useState({});
+
+      React.useEffect(() => {
+        const compute = () => {
+          const pad = 32;
+          const w = window.innerWidth - pad;
+          const h = window.innerHeight - pad;
+          const s = Math.min(w / 422, h / 894, 1);
+          setScale(s);
+        };
+        compute();
+        window.addEventListener('resize', compute);
+        return () => window.removeEventListener('resize', compute);
+      }, []);
+
+      // Edit-mode protocol
+      React.useEffect(() => {
+        const onMsg = (e) => {
+          if (!e.data) return;
+          if (e.data.type === '__activate_edit_mode') setTweaksOn(true);
+          if (e.data.type === '__deactivate_edit_mode') setTweaksOn(false);
+        };
+        window.addEventListener('message', onMsg);
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+        return () => window.removeEventListener('message', onMsg);
+      }, []);
+
+      const updateTweak = (key, value) => {
+        setTweaks(prev => {
+          const next = { ...prev, [key]: value };
+          window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*');
+          return next;
+        });
+      };
+
+      return (
+        <React.Fragment>
+          <div className="stage">
+            <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+              <IOSDevice width={402} height={874}>
+                {screen === 'onboarding' ? (
+                  <OnboardingScreen
+                    tweaks={tweaks}
+                    onDone={(ans) => { setAnswers(ans); setScreen('map'); }}
+                  />
+                ) : (
+                  <MapScreen
+                    answers={answers}
+                    onBack={() => setScreen('onboarding')}
+                  />
+                )}
+              </IOSDevice>
+            </div>
+          </div>
+
+          {tweaksOn && (
+            <div className="tweaks">
+              <h4>Tweaks</h4>
+
+              <div className="group">
+                <label>Interaction</label>
+                <div className="pills">
+                  {['sheet', 'tap', 'scroll'].map(v => (
+                    <button
+                      key={v}
+                      className={'pill' + (tweaks.interaction === v ? ' on' : '')}
+                      onClick={() => updateTweak('interaction', v)}
+                    >{v === 'sheet' ? 'Sub-flow' : v === 'tap' ? 'Tap' : 'Scroll'}</button>
+                  ))}
+                </div>
+                <div style={{ font: '400 11px/1.4 Google Sans, sans-serif', color: '#63615D', marginTop: 6 }}>
+                  {tweaks.interaction === 'sheet' && 'Tap step → bottom sheet → answer fills it.'}
+                  {tweaks.interaction === 'tap'   && 'Tap step → fills directly (toggle).'}
+                  {tweaks.interaction === 'scroll'&& 'Steps fill as you scroll past them.'}
+                </div>
+              </div>
+
+              <div className="group">
+                <label>Locked circle border</label>
+                <div className="pills">
+                  {['dashed', 'dotted', 'solid-outline'].map(v => (
+                    <button
+                      key={v}
+                      className={'pill' + (tweaks.numberStyle === v ? ' on' : '')}
+                      onClick={() => updateTweak('numberStyle', v)}
+                    >{v === 'solid-outline' ? 'Solid' : v[0].toUpperCase() + v.slice(1)}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="group">
+                <label>Numbered circles</label>
+                <div className="pills">
+                  <button
+                    className={'pill' + (tweaks.staggerLayout ? ' on' : '')}
+                    onClick={() => updateTweak('staggerLayout', true)}
+                  >Staggered</button>
+                  <button
+                    className={'pill' + (!tweaks.staggerLayout ? ' on' : '')}
+                    onClick={() => updateTweak('staggerLayout', false)}
+                  >Centered</button>
+                </div>
+              </div>
+
+              <div className="group">
+                <label>CTA label</label>
+                <input
+                  type="text"
+                  value={tweaks.ctaLabel}
+                  onChange={e => updateTweak('ctaLabel', e.target.value)}
+                />
+              </div>
+
+              <div className="group">
+                <label className="toggle">
+                  <span>Show "X of 4 answered"</span>
+                  <input
+                    type="checkbox"
+                    checked={tweaks.showCounter}
+                    onChange={e => updateTweak('showCounter', e.target.checked)}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+        </React.Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

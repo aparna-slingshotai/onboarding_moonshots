@@ -1,0 +1,378 @@
+/* ============================================================
+   Sundial Design System — Colors & Type Tokens
+   ------------------------------------------------------------
+   Extracted from the "Sundial Design System" Figma file.
+   Sundial is a companion/journal app with a warm, almanac,
+   parchment aesthetic. Two typefaces carry everything:
+     • Libre Baskerville — serif display, editorial, reflective
+     • Google Sans — humanist sans, UI & body
+   ============================================================ */
+
+/* -- Fonts ------------------------------------------------ */
+@font-face {
+  font-family: "Google Sans";
+  font-weight: 100 900;
+  font-style: normal;
+  src: url("./fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf") format("truetype-variations");
+}
+@font-face {
+  font-family: "Google Sans";
+  font-weight: 100 900;
+  font-style: italic;
+  src: url("./fonts/GoogleSans-Italic-VariableFont_GRAD,opsz,wght.ttf") format("truetype-variations");
+}
+
+@font-face {
+  font-family: "Libre Baskerville";
+  font-weight: 400 700;
+  font-style: normal;
+  src: url("./fonts/LibreBaskerville-VariableFont_wght.ttf") format("truetype-variations");
+}
+@font-face {
+  font-family: "Libre Baskerville";
+  font-weight: 400 700;
+  font-style: italic;
+  src: url("./fonts/LibreBaskerville-Italic-VariableFont_wght.ttf") format("truetype-variations");
+}
+
+:root {
+  /* ======================================================
+     CORE SCALES (from the Color page)
+     ====================================================== */
+
+  /* parchment — neutral, warm gray. The foundational surface. */
+  --parchment-50:  #F6F3ED;
+  --parchment-100: #EBE7DE;  /* page background, default surface light */
+  --parchment-200: #DDDAD1;  /* divider, chip fill, subtle container */
+  --parchment-300: #CFCBC4;
+  --parchment-400: #A2A09A;
+  --parchment-500: #807E7A;  /* secondary text, disabled icon */
+  --parchment-600: #63615D;  /* secondary text on light */
+  --parchment-700: #464543;  /* primary text on light (softened black) */
+  --parchment-800: #272725;  /* user message bubble, dark surface card */
+  --parchment-900: #1A1918;  /* primary text, dark surface base */
+  --parchment-950: #0F0E0D;
+
+  /* wood — warm tan, secondary neutral */
+  --wood-50:  #FAF2F0;
+  --wood-100: #EEDDD3;
+  --wood-200: #E9D7CB;
+  --wood-300: #DBB9A1;
+  --wood-400: #C59677;
+  --wood-500: #AD7049;
+  --wood-600: #8E521F;
+  --wood-700: #5C3715;
+  --wood-800: #3A2209;
+  --wood-900: #221305;
+  --wood-950: #150A02;
+
+  /* apricot — accent, warm orange (Accent Button - light) */
+  --apricot-50:  #FBF2EB;
+  --apricot-100: #F4E0CB;
+  --apricot-200: #F1CEA9;
+  --apricot-300: #EDB57F;
+  --apricot-400: #E79A52;
+  --apricot-500: #D98F51;  /* primary accent orange */
+  --apricot-600: #AD6929;
+  --apricot-700: #7A4915;
+  --apricot-800: #482B0B;
+  --apricot-900: #281604;
+  --apricot-950: #150B01;
+
+  /* olive — accent, sage/olive green */
+  --olive-50:  #EFF2E0;
+  --olive-100: #E1E9C5;
+  --olive-200: #CCD7A2;
+  --olive-300: #B2C278;
+  --olive-400: #95A84F;
+  --olive-500: #7C843D;
+  --olive-600: #5D6329;
+  --olive-700: #3E4218;
+  --olive-800: #24270D;
+  --olive-900: #121405;
+  --olive-950: #090A02;
+
+  /* seafoam — accent, muted teal-green */
+  --seafoam-50:  #E4EEE6;
+  --seafoam-100: #CFE0D3;
+  --seafoam-200: #B9CFC0;
+  --seafoam-300: #9AB5A2;
+  --seafoam-400: #769283;
+  --seafoam-500: #4D675A;
+  --seafoam-600: #354A3E;
+  --seafoam-700: #223128;
+  --seafoam-800: #131C16;
+  --seafoam-900: #0A0F0B;
+  --seafoam-950: #050806;
+
+  /* plum — accent, dusty rose-purple (primary brand accent) */
+  --plum-50:  #F3E9EE;
+  --plum-100: #EAD7E1;
+  --plum-200: #DDBDD0;
+  --plum-300: #C89EB9;
+  --plum-400: #A66C94;
+  --plum-500: #855074;  /* brand accent, primary button, switch-on */
+  --plum-600: #5F3853;
+  --plum-700: #422437;
+  --plum-800: #291420;
+  --plum-900: #170A11;
+  --plum-950: #0B0508;
+
+  /* ======================================================
+     ALERT SCALES
+     ====================================================== */
+  --alert-red-50:  #F7E8E6;
+  --alert-red-100: #EFD2D0;
+  --alert-red-200: #E8B6B2;
+  --alert-red-300: #DA8B86;
+  --alert-red-400: #C66051;
+  --alert-red-500: #A94331;
+  --alert-red-600: #7A2D20;
+  --alert-red-700: #4E1B12;
+  --alert-red-800: #2A0E07;
+  --alert-red-900: #150501;
+  --alert-red-950: #0A0300;
+
+  --alert-yellow-50:  #FAF0DA;
+  --alert-yellow-100: #F3E0BD;
+  --alert-yellow-200: #E8C996;
+  --alert-yellow-300: #D8A85F;
+  --alert-yellow-400: #CF9B19;
+  --alert-yellow-500: #8F6A14;
+  --alert-yellow-600: #63490E;
+  --alert-yellow-700: #3D2D08;
+  --alert-yellow-800: #231904;
+  --alert-yellow-900: #120C02;
+  --alert-yellow-950: #080500;
+
+  --alert-green-50:  #DDEEDD;
+  --alert-green-100: #C8E0C8;
+  --alert-green-200: #A8C9A8;
+  --alert-green-300: #83AE86;
+  --alert-green-400: #5C8E63;
+  --alert-green-500: #3E6E47;
+  --alert-green-600: #2A4E31;
+  --alert-green-700: #18321C;
+  --alert-green-800: #0B1C0D;
+  --alert-green-900: #050D04;
+  --alert-green-950: #020600;
+
+  /* ======================================================
+     SEMANTIC TOKENS — LIGHT MODE (default)
+     ====================================================== */
+
+  /* Surface */
+  --surface-base:      var(--parchment-100);   /* app background */
+  --surface-raised:    var(--parchment-50);    /* elevated card */
+  --surface-sunken:    var(--parchment-200);   /* subtle well */
+  --surface-inverse:   var(--parchment-900);   /* dark bubbles, dark mode */
+
+  /* Contrast (for text / icons on light surfaces) */
+  --contrast-1:        var(--parchment-900);   /* primary */
+  --contrast-2:        var(--parchment-700);   /* secondary */
+  --contrast-3:        var(--parchment-600);   /* tertiary / captions */
+  --contrast-4:        var(--parchment-500);   /* placeholder, disabled */
+  --contrast-5:        var(--parchment-400);   /* decorative line */
+
+  /* Foreground / background conveniences */
+  --fg-1:              var(--contrast-1);
+  --fg-2:              var(--contrast-2);
+  --fg-3:              var(--contrast-3);
+  --fg-muted:          var(--contrast-4);
+  --bg-1:              var(--surface-base);
+  --bg-2:              var(--surface-sunken);
+
+  /* Accent buttons (filled) */
+  --accent-primary:    var(--plum-500);        /* primary CTA */
+  --accent-primary-fg: var(--plum-100);        /* text on plum — plum-100 per spec */
+  --accent-warm:       var(--wood-500);        /* secondary CTA */
+  --accent-warm-fg:    var(--wood-100);
+  --accent-sage:       var(--olive-500);
+  --accent-deep:       var(--seafoam-500);
+
+  /* Badge / status dots */
+  --badge-red:         var(--alert-red-400);   /* notification dot */
+  --badge-plum:        var(--plum-400);
+  --badge-fg:          var(--parchment-50);
+
+  /* Borders / dividers */
+  --border-subtle:     var(--parchment-200);
+  --border-strong:     var(--parchment-300);
+  --border-focus:      var(--plum-500);
+
+  /* State layers (overlay on press/hover/focus) */
+  --state-layer-press: rgba(26, 25, 24, 0.10);
+  --state-layer-hover: rgba(26, 25, 24, 0.06);
+  --state-layer-focus: rgba(26, 25, 24, 0.10);
+
+  /* ======================================================
+     RADII, SPACING, ELEVATION
+     ====================================================== */
+
+  /* Spacing (8pt scale w/ half-steps) */
+  --spacing-01:  2px;
+  --spacing-02:  4px;
+  --spacing-03:  8px;
+  --spacing-04:  12px;
+  --spacing-05:  16px;
+  --spacing-06:  24px;
+  --spacing-07:  32px;
+  --spacing-08:  40px;
+  --spacing-09:  48px;
+  --spacing-10:  64px;
+  --spacing-11:  80px;
+  --spacing-12:  96px;
+  --spacing-13:  128px;
+
+  /* Radii */
+  --radius-01:  8px;
+  --radius-02:  12px;
+  --radius-03:  16px;
+  --radius-04:  24px;
+  --radius-05:  32px;
+  --radius-round: 9999px;
+
+  /* Elevation (soft, warm — no colorful gradients) */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(26, 25, 24, 0.06);
+  --elev-2: 0 4px 12px rgba(26, 25, 24, 0.08);
+  --elev-3: 0 8px 24px rgba(26, 25, 24, 0.10);
+  --elev-inset: inset 0 0 0 1px rgba(26, 25, 24, 0.04);
+
+  /* ======================================================
+     TYPOGRAPHY TOKENS
+     ====================================================== */
+
+  /* Font families */
+  --font-serif:  "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --font-sans:   "Google Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:   ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: var(--font-serif);
+  --font-body:    var(--font-sans);
+}
+
+/* ==========================================================
+   SEMANTIC TEXT STYLES
+   - Display = Libre Baskerville Medium, tight tracking
+   - Title   = Google Sans Bold
+   - Body    = Google Sans Regular, 150% line-height
+   - Overline = Google Sans Medium, wide tracking
+   - Button  = Google Sans Medium, wide tracking
+   ========================================================== */
+
+.display-lg, .ds-display-lg, h1.display,
+.ds-h1 {
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: 32px; line-height: 1.2; letter-spacing: -1px;
+  color: var(--fg-1);
+}
+.display-md, .ds-display-md {
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: 29px; line-height: 1.2; letter-spacing: -0.75px;
+  color: var(--fg-1);
+}
+.display-sm, .ds-display-sm {
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: 26px; line-height: 1.2; letter-spacing: -0.5px;
+  color: var(--fg-1);
+}
+
+.title-lg, .ds-title-lg, h2.title, .ds-h2 {
+  font-family: var(--font-sans); font-weight: 700;
+  font-size: 24px; line-height: 1.0; letter-spacing: -0.25px;
+  color: var(--fg-1);
+}
+.title-md, .ds-title-md, h3.title, .ds-h3 {
+  font-family: var(--font-sans); font-weight: 700;
+  font-size: 20px; line-height: 1.2; letter-spacing: -0.1px;
+  color: var(--fg-1);
+}
+.title-sm, .ds-title-sm, h4.title, .ds-h4 {
+  font-family: var(--font-sans); font-weight: 700;
+  font-size: 18px; line-height: 1.2; letter-spacing: -0.1px;
+  color: var(--fg-1);
+}
+
+.body-lg, .ds-body-lg, p.body {
+  font-family: var(--font-sans); font-weight: 400;
+  font-size: 16px; line-height: 1.5;
+  color: var(--fg-1);
+}
+.body-md, .ds-body-md {
+  font-family: var(--font-sans); font-weight: 400;
+  font-size: 14px; line-height: 1.5;
+  color: var(--fg-1);
+}
+.body-sm, .ds-body-sm, small.body {
+  font-family: var(--font-sans); font-weight: 400;
+  font-size: 12px; line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.overline-lg, .ds-overline-lg {
+  font-family: var(--font-sans); font-weight: 500;
+  font-size: 14px; line-height: 1.2; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.overline-sm, .ds-overline-sm {
+  font-family: var(--font-sans); font-weight: 500;
+  font-size: 12px; line-height: 1.2; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.button-lg, .ds-button-lg {
+  font-family: var(--font-sans); font-weight: 500;
+  font-size: 16px; line-height: 1.5; letter-spacing: 1.25px;
+}
+.button-sm, .ds-button-sm {
+  font-family: var(--font-sans); font-weight: 500;
+  font-size: 10px; line-height: 1.2; letter-spacing: 1.25px;
+  text-transform: uppercase;
+}
+
+/* ==========================================================
+   DARK MODE OVERRIDES
+   Based on the "Surface - Dark" and "Contrast - Dark" groups.
+   ========================================================== */
+.dark, [data-theme="dark"] {
+  --surface-base:      var(--parchment-900);
+  --surface-raised:    var(--parchment-800);
+  --surface-sunken:    #101010;
+  --surface-inverse:   var(--parchment-100);
+
+  --contrast-1:        var(--parchment-100);   /* parchment 100 on dark */
+  --contrast-2:        var(--parchment-200);
+  --contrast-3:        var(--parchment-300);
+  --contrast-4:        var(--parchment-400);
+  --contrast-5:        var(--parchment-500);
+
+  --fg-1:              var(--contrast-1);
+  --fg-2:              var(--contrast-2);
+  --fg-3:              var(--contrast-3);
+  --fg-muted:          var(--contrast-4);
+  --bg-1:              var(--surface-base);
+  --bg-2:              var(--surface-raised);
+
+  --border-subtle:     rgba(235,231,222,0.08);
+  --border-strong:     rgba(235,231,222,0.16);
+
+  --state-layer-press: rgba(235, 231, 222, 0.08);
+  --state-layer-hover: rgba(235, 231, 222, 0.05);
+  --state-layer-focus: rgba(235, 231, 222, 0.10);
+}
+
+/* ==========================================================
+   GLOBAL RESET for Sundial previews
+   ========================================================== */
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-sans);
+  color: var(--fg-1);
+  background: var(--bg-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
