@@ -115,6 +115,38 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
     return () => el.removeEventListener('scroll', check);
   }, [interaction, scrollFilled]);
 
+  // Sheet-mode: auto-open each step's drawer the first time its block scrolls
+  // into view. Tracked per-id so a dismissed sheet won't re-open on further scroll.
+  const [autoOpened, setAutoOpened] = React.useState(new Set());
+  React.useEffect(() => {
+    if (interaction !== 'sheet') return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const check = () => {
+      if (openStep != null) return;
+      const scope = el.getBoundingClientRect();
+      const trigger = scope.top + scope.height * 0.5;
+      for (const s of STEPS) {
+        if (autoOpened.has(s.id)) continue;
+        if (completed(s.id)) continue;
+        const node = el.querySelector(`[data-step-id="${s.id}"]`);
+        if (!node) continue;
+        const rect = node.getBoundingClientRect();
+        if (rect.top < trigger && rect.bottom > scope.top) {
+          setAutoOpened(prev => {
+            const next = new Set(prev);
+            next.add(s.id);
+            return next;
+          });
+          setOpenStep(s.id);
+          break;
+        }
+      }
+    };
+    el.addEventListener('scroll', check, { passive: true });
+    return () => el.removeEventListener('scroll', check);
+  }, [interaction, openStep, autoOpened, answers]);
+
   // Override `completed` for scroll + tap modes
   const isDone = (id) => {
     if (interaction === 'scroll') return scrollFilled.has(id);
@@ -233,6 +265,15 @@ function OnboardingScreen({ onDone, tweaks = {} }) {
                   const target = el.scrollTop + (nodeTop - scopeTop) - 60;
                   el.scrollTo({ top: target, behavior: 'smooth' });
                 }
+                // Open the next step's drawer after the scroll kicks off.
+                setTimeout(() => {
+                  setAutoOpened(prev => {
+                    const next = new Set(prev);
+                    next.add(nextId);
+                    return next;
+                  });
+                  setOpenStep(nextId);
+                }, 450);
               }, 320); // wait for sheet dismiss
             } else if (el) {
               // Step 4 answered — scroll to CTA
