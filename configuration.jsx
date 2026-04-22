@@ -178,7 +178,9 @@ function CfgFlower({ x, y, r, bedColor, delay }) {
       style={{
         opacity: 0,
         animation: `cfgBloom 520ms cubic-bezier(0.2,1.2,0.2,1) ${delay || 0}ms both`,
-        transformOrigin: `${x}px ${y}px`,
+        // Scale from the flower's own center so blooms open outward
+        // like a bud (instead of zooming in from a corner).
+        transformOrigin: 'center',
         transformBox: 'fill-box',
       }}
     >
@@ -369,14 +371,18 @@ function ConfigurationTreeTall({ entries, baseline, scheduleKey }) {
       style={{ display: 'block' }}
     >
       <style>{`
+        /* Start the path invisible and snap to visible once the
+           animation begins, so the rounded linecap doesn't render as a
+           stray dot during the delay period. */
         @keyframes cfgGrow {
-          from { stroke-dashoffset: 100; }
-          to   { stroke-dashoffset: 0;   }
+          0%   { opacity: 0; stroke-dashoffset: 100; }
+          2%   { opacity: 1; stroke-dashoffset: 99;  }
+          100% { opacity: 1; stroke-dashoffset: 0;   }
         }
         @keyframes cfgBloom {
-          0%   { transform: scale(0.2); opacity: 0; }
+          0%   { transform: scale(0.15); opacity: 0; }
           55%  { opacity: 1; }
-          100% { transform: scale(1);   opacity: 1; }
+          100% { transform: scale(1);    opacity: 1; }
         }
       `}</style>
       <rect width="402" height={TALL_H} fill={CFG_PINK} />
@@ -417,7 +423,7 @@ function ConfigurationTreeTall({ entries, baseline, scheduleKey }) {
             ref={el => (flowerRefs.current[i] = el)}
             style={{
               opacity: 0,
-              transformOrigin: `${f.x}px ${f.y}px`,
+              transformOrigin: 'center',
               transformBox: 'fill-box',
             }}
           >
