@@ -198,7 +198,78 @@ function CfgFlower({ x, y, r, bedColor, delay }) {
 // Tree — trunk + branches + progressive flowers. `selections` is an
 // array of option labels in the order they were selected; that order
 // drives both which flower slot opens next and what color its bed is.
-function ConfigurationTree({ baseline, entries, swayKey }) {
+// Per-personality motions — each option gets its own signature movement
+// so tapping "Direct" reads differently from "Wise". Values map to CSS
+// keyframe name, duration (ms), and easing.
+const PERSONALITY_MOTIONS = {
+  Warm:       { keyframes: 'cfgSwayWarm',      dur: 900, easing: 'cubic-bezier(0.4,0,0.2,1)' },
+  Direct:     { keyframes: 'cfgSwayDirect',    dur: 420, easing: 'cubic-bezier(0.25,0.8,0.25,1)' },
+  Sarcastic:  { keyframes: 'cfgSwaySarcastic', dur: 600, easing: 'cubic-bezier(0.3,0.1,0.3,1)' },
+  'Laid-back':{ keyframes: 'cfgSwayLaidBack',  dur: 1100, easing: 'cubic-bezier(0.45,0.05,0.55,0.95)' },
+  Quirky:     { keyframes: 'cfgSwayQuirky',    dur: 700, easing: 'linear' },
+  Wise:       { keyframes: 'cfgSwayWise',      dur: 1200, easing: 'cubic-bezier(0.45,0,0.55,1)' },
+  Humorous:   { keyframes: 'cfgSwayHumorous',  dur: 650, easing: 'cubic-bezier(0.2,1.4,0.3,1)' },
+  Nerdy:      { keyframes: 'cfgSwayNerdy',     dur: 420, easing: 'linear' },
+};
+
+// CSS for all the per-option keyframes. Injected once at the top of the
+// Tree SVG so we don't fight React's dedupe.
+const PERSONALITY_KEYFRAMES_CSS = `
+  @keyframes cfgSwayWarm {
+    0%   { transform: rotate(0deg); }
+    50%  { transform: rotate(1.6deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes cfgSwayDirect {
+    0%   { transform: rotate(0deg); }
+    30%  { transform: rotate(4.5deg); }
+    55%  { transform: rotate(2.2deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes cfgSwaySarcastic {
+    0%   { transform: rotate(0deg) translateX(0); }
+    40%  { transform: rotate(-2.8deg) translateX(-3px); }
+    70%  { transform: rotate(1.2deg) translateX(1px); }
+    100% { transform: rotate(0deg) translateX(0); }
+  }
+  @keyframes cfgSwayLaidBack {
+    0%   { transform: rotate(0deg); }
+    25%  { transform: rotate(-3.4deg); }
+    75%  { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes cfgSwayQuirky {
+    0%   { transform: rotate(0deg); }
+    15%  { transform: rotate(4deg); }
+    30%  { transform: rotate(-3.2deg); }
+    45%  { transform: rotate(2.6deg); }
+    60%  { transform: rotate(-2deg); }
+    80%  { transform: rotate(1deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes cfgSwayWise {
+    0%   { transform: rotate(0deg) translateY(0); }
+    50%  { transform: rotate(0.6deg) translateY(-1.5px); }
+    100% { transform: rotate(0deg) translateY(0); }
+  }
+  @keyframes cfgSwayHumorous {
+    0%   { transform: rotate(0deg)  scale(1); }
+    35%  { transform: rotate(-1deg) scale(0.97); }
+    65%  { transform: rotate(1.5deg) scale(1.03); }
+    100% { transform: rotate(0deg)  scale(1); }
+  }
+  @keyframes cfgSwayNerdy {
+    0%   { transform: rotate(0deg); }
+    12%  { transform: rotate(-2.4deg); }
+    24%  { transform: rotate(2.4deg); }
+    36%  { transform: rotate(-1.8deg); }
+    48%  { transform: rotate(1.8deg); }
+    60%  { transform: rotate(-1deg); }
+    100% { transform: rotate(0deg); }
+  }
+`;
+
+function ConfigurationTree({ baseline, entries, swayKey, swayLabel }) {
   const bloomCount = Math.min(CFG_FLOWERS.length, baseline + entries.length);
 
   // When a bloom is past the TINY_START index, we also want its matching
@@ -207,15 +278,20 @@ function ConfigurationTree({ baseline, entries, swayKey }) {
 
   // Trigger the sway by resetting the animation imperatively instead of
   // re-mounting the group (which would replay every flower's bloom).
+  // Each personality option has its own keyframe so the motion feels
+  // distinct per option.
   const swayRef = React.useRef(null);
   React.useEffect(() => {
     if (!swayKey || !swayRef.current) return;
+    const motion = PERSONALITY_MOTIONS[swayLabel] || {
+      keyframes: 'cfgSwayWarm', dur: 600, easing: 'ease-in-out',
+    };
     const el = swayRef.current;
     el.style.animation = 'none';
     // force a reflow so the browser registers the reset
     void el.getBoundingClientRect();
-    el.style.animation = 'cfgSway 560ms cubic-bezier(0.4,0,0.2,1) both';
-  }, [swayKey]);
+    el.style.animation = `${motion.keyframes} ${motion.dur}ms ${motion.easing} both`;
+  }, [swayKey, swayLabel]);
 
   // Tree SVG viewBox is fixed; fullScreen pages render it with
   // xMidYMax-slice so the trunk anchors to the bottom of the phone.
@@ -233,12 +309,7 @@ function ConfigurationTree({ baseline, entries, swayKey }) {
           55%  { opacity: 1; }
           100% { transform: scale(1);   opacity: 1; }
         }
-        @keyframes cfgSway {
-          0%   { transform: rotate(0deg); }
-          25%  { transform: rotate(1.8deg); }
-          60%  { transform: rotate(-1.4deg); }
-          100% { transform: rotate(0deg); }
-        }
+        ${PERSONALITY_KEYFRAMES_CSS}
       `}</style>
       <rect width="402" height="350" fill={CFG_PINK} />
       <circle cx="358" cy="46" r="10" fill={CFG_CREAM} />
@@ -511,9 +582,11 @@ function CfgIconCell({ label, selected, disabled, onClick }) {
 function ConfigurationScreen({ onDone, onDismiss, onBack }) {
   const [idx, setIdx] = React.useState(0);
   const [answers, setAnswers] = React.useState({});
-  // Bumped each time the user taps a personality pill (or a capped-out
-  // option) so the tree can re-trigger its sway animation.
+  // Bumped each time the user taps a personality pill so the tree can
+  // re-trigger its sway animation. `swayLabel` is the label of the
+  // option last tapped, so each option drives its own motion.
   const [swayTick, setSwayTick] = React.useState(0);
+  const [swayLabel, setSwayLabel] = React.useState(null);
   const page = CFG_PAGES[idx];
 
   // Selections that should show up as flowers, tagged with their bed
@@ -549,7 +622,10 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
   const toggleMulti = (id, v, cap, sway) => setAnswers(prev => {
     const curr = prev[id] || [];
     const has = curr.includes(v);
-    if (sway) setSwayTick(t => t + 1);
+    if (sway) {
+      setSwayTick(t => t + 1);
+      setSwayLabel(v);
+    }
     if (!has && cap && curr.length >= cap) {
       // At cap: disallow adding more, but still let the tree sway.
       return prev;
@@ -610,11 +686,16 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
 
   return (
     <div style={{ width: 402, height: 874, background: CFG_CREAM, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 350 }}>
+      {/* Tree gets the upper ~55% of the phone so it has room to breathe;
+          title + options live in the lower half, pushed toward the CTA.
+          Pink bg on the container so the sky fills the whole top area
+          above the tree's own canvas. */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 486, background: CFG_PINK }}>
         <ConfigurationTree
           baseline={baseline}
           entries={bloomEntries}
           swayKey={page.sway ? swayTick : undefined}
+          swayLabel={page.sway ? swayLabel : undefined}
         />
       </div>
 
@@ -628,24 +709,25 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
       <div
         style={{
           position: 'absolute',
-          top: 350, left: 0, right: 0, bottom: 0,
+          top: 486, left: 0, right: 0, bottom: 0,
           background: CFG_CREAM,
-          padding: '28px 20px 140px',
+          padding: '24px 20px 140px',
           overflowY: 'auto',
           zIndex: 3,
+          textAlign: 'center',
         }}
       >
         <h1 style={{ font: `500 24px/1.25 ${S.serif}`, color: CFG_NIGHT, margin: '0 0 8px', letterSpacing: -0.4 }}>
           {page.title}
         </h1>
         {page.subtitle && (
-          <p style={{ font: `400 14px/1.5 ${S.sans}`, color: 'rgba(26,25,24,0.72)', margin: '0 0 20px' }}>
+          <p style={{ font: `400 14px/1.5 ${S.sans}`, color: 'rgba(26,25,24,0.72)', margin: '0 auto 20px', maxWidth: 320 }}>
             {page.subtitle}
           </p>
         )}
 
         {page.kind === 'single' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
             {page.options.map(opt => (
               <CfgPill
                 key={opt}
@@ -661,7 +743,7 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
           const curr = answers[page.id] || [];
           const atCap = page.cap != null && curr.length >= page.cap;
           return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
               {page.options.map(opt => {
                 const selected = curr.includes(opt);
                 return (
