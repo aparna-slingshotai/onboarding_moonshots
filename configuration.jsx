@@ -93,6 +93,8 @@ const CFG_PAGES = [
     title: 'Next, what perspectives matter to you?',
     subtitle: 'This helps me understand what kinds of lenses I should bring to our conversations.',
     options: CFG_PERSPECTIVES,
+    cap: 5,
+    noBeds: true,  // perspective flowers stay plain cream, no colored bed
   },
   {
     kind: 'multi',
@@ -194,11 +196,9 @@ function CfgFlower({ x, y, r, bedColor, delay }) {
 // Tree — trunk + branches + progressive flowers. `selections` is an
 // array of option labels in the order they were selected; that order
 // drives both which flower slot opens next and what color its bed is.
-function ConfigurationTree({ baseline, selections, replay, swayKey, fullScreen }) {
-  const bloomCount = Math.min(CFG_FLOWERS.length, baseline + selections.length);
+function ConfigurationTree({ baseline, entries, swayKey }) {
+  const bloomCount = Math.min(CFG_FLOWERS.length, baseline + entries.length);
 
-  // Staggered delays when we're on the final screen replaying the growth.
-  const delayFor = (i) => replay ? i * 140 : 0;
   // When a bloom is past the TINY_START index, we also want its matching
   // twig visible.
   const tinyBranchesVisible = Math.max(0, bloomCount - TINY_START);
@@ -223,7 +223,7 @@ function ConfigurationTree({ baseline, selections, replay, swayKey, fullScreen }
       width="100%"
       height="100%"
       preserveAspectRatio="xMidYMax meet"
-      style={{ display: 'block' }}
+      style={{ display: 'block', overflow: 'visible' }}
     >
       <style>{`
         @keyframes cfgBloom {
@@ -265,18 +265,170 @@ function ConfigurationTree({ baseline, selections, replay, swayKey, fullScreen }
           // First `baseline` slots are plain cream "background" flowers;
           // slots from baseline onward are mapped to user selections.
           const selectionIdx = i - baseline;
-          const pick = selectionIdx >= 0 ? selections[selectionIdx] : null;
-          const bed = pick ? CFG_COLORS[pick] : null;
+          const entry = selectionIdx >= 0 ? entries[selectionIdx] : null;
+          const label = entry ? entry.label : '';
+          const bed = entry ? entry.bed : null;
           return (
             <CfgFlower
-              key={`${i}-${pick || ''}-${replay ? 'r' : 'q'}`}
+              key={`${i}-${label}`}
               x={f.x} y={f.y} r={f.r}
               bedColor={bed}
-              delay={delayFor(i)}
+              delay={0}
             />
           );
         })}
       </g>
+    </svg>
+  );
+}
+
+// Tall tree for the "You're all set" page. Draws the trunk + branches
+// from the bottom upward using stroke-dashoffset animation, then blooms
+// each flower in sequence. The whole tree occupies the middle of the
+// screen (402×700) so the title can breathe above it.
+const TALL_H = 700;
+
+// Scale the short-tree flower positions vertically (~×2.0) so the canopy
+// fills the upper portion of the tall viewport.
+const CFG_FLOWERS_TALL = [
+  { x: 206, y: 184, r: 54 },   // 0 crown
+  { x: 104, y: 264, r: 46 },   // 1 upper-left
+  { x: 300, y: 280, r: 50 },   // 2 upper-right
+  { x: 66,  y: 424, r: 40 },   // 3 mid-left
+  { x: 334, y: 444, r: 44 },   // 4 mid-right
+  { x: 180, y: 368, r: 34 },   // 5 center-left small
+  { x: 240, y: 396, r: 32 },   // 6 center-right small
+  { x: 134, y: 548, r: 32 },   // 7 lower-left
+  { x: 268, y: 552, r: 32 },   // 8 lower-right
+  { x: 92,  y: 200, r: 22 },   // 9 tiny far-left high
+  { x: 324, y: 180, r: 22 },   // 10 tiny far-right high
+  { x: 208, y: 296, r: 20 },   // 11 under-crown
+  { x: 158, y: 192, r: 20 },   // 12 crown-left
+  { x: 258, y: 208, r: 18 },   // 13 crown-right
+  { x: 198, y: 480, r: 20 },   // 14 mid-spine
+];
+
+// Trunk + branch paths for the tall tree. Trunk goes bottom→top so its
+// stroke-dasharray animation reads as "growing up".
+const TALL_TRUNK = 'M 200 720 C 195 600 215 480 200 370 C 186 270 220 160 206 80';
+const TALL_BRANCHES = [
+  { d: 'M 204 240 Q 154 232 98  264',  w: 22, start: 0.74 },  // matches flower 1
+  { d: 'M 210 284 Q 260 272 302 288',  w: 22, start: 0.71 },  // matches flower 2
+  { d: 'M 198 408 Q 134 404 70  420',  w: 22, start: 0.47 },  // matches flower 3
+  { d: 'M 212 440 Q 280 432 332 428',  w: 20, start: 0.43 },  // matches flower 4
+  { d: 'M 200 552 Q 168 540 134 528',  w: 14, start: 0.26 },  // matches flower 7
+  { d: 'M 210 560 Q 242 548 272 540',  w: 14, start: 0.23 },  // matches flower 8
+];
+
+function ConfigurationTreeTall({ entries, baseline, scheduleKey }) {
+  // Total number of flowers the user has earned so far, capped.
+  const bloomCount = Math.min(CFG_FLOWERS_TALL.length, baseline + entries.length);
+  const trunkRef = React.useRef(null);
+  const branchRefs = React.useRef([]);
+  const flowerRefs = React.useRef([]);
+
+  // Kick off the grow-from-bottom choreography on mount (or whenever a
+  // scheduleKey changes, so back-and-forward re-plays the animation).
+  React.useEffect(() => {
+    // Trunk: draw 0→100 over 1600ms.
+    const trunk = trunkRef.current;
+    if (trunk) {
+      trunk.style.animation = 'none';
+      void trunk.getBoundingClientRect();
+      trunk.style.animation = 'cfgGrow 1800ms cubic-bezier(0.2,0.6,0.2,1) both';
+    }
+    // Branches: each begins when trunk visually reaches its y (start
+    // fraction), so upper branches appear later than lower.
+    branchRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const b = TALL_BRANCHES[i];
+      const delay = 1800 * b.start;
+      el.style.animation = 'none';
+      void el.getBoundingClientRect();
+      el.style.animation = `cfgGrow 600ms cubic-bezier(0.2,0.6,0.2,1) ${delay}ms both`;
+    });
+    // Flowers: bloom after the trunk has grown past them. Lower y ↓
+    // (higher on screen) = later delay.
+    flowerRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const f = CFG_FLOWERS_TALL[i];
+      // Map y from the upper canopy band (60…600) to 0…1 progress
+      const trunkProgress = Math.max(0, Math.min(1, (720 - f.y) / (720 - 80)));
+      const delay = 1400 + trunkProgress * 900;
+      el.style.animation = 'none';
+      void el.getBoundingClientRect();
+      el.style.animation = `cfgBloom 560ms cubic-bezier(0.2,1.2,0.2,1) ${delay}ms both`;
+    });
+  }, [scheduleKey]);
+
+  return (
+    <svg
+      viewBox={`0 0 402 ${TALL_H}`}
+      width="100%" height="100%"
+      preserveAspectRatio="xMidYMax meet"
+      style={{ display: 'block' }}
+    >
+      <style>{`
+        @keyframes cfgGrow {
+          from { stroke-dashoffset: 100; }
+          to   { stroke-dashoffset: 0;   }
+        }
+        @keyframes cfgBloom {
+          0%   { transform: scale(0.2); opacity: 0; }
+          55%  { opacity: 1; }
+          100% { transform: scale(1);   opacity: 1; }
+        }
+      `}</style>
+      <rect width="402" height={TALL_H} fill={CFG_PINK} />
+      <g stroke={CFG_KHAKI} strokeLinecap="round" fill="none">
+        <path
+          ref={trunkRef}
+          d={TALL_TRUNK}
+          strokeWidth="46"
+          pathLength="100"
+          strokeDasharray="100"
+          strokeDashoffset="100"
+        />
+        {TALL_BRANCHES.map((b, i) => (
+          <path
+            key={i}
+            ref={el => (branchRefs.current[i] = el)}
+            d={b.d}
+            strokeWidth={b.w}
+            pathLength="100"
+            strokeDasharray="100"
+            strokeDashoffset="100"
+          />
+        ))}
+      </g>
+      {CFG_FLOWERS_TALL.slice(0, bloomCount).map((f, i) => {
+        const selectionIdx = i - baseline;
+        const entry = selectionIdx >= 0 ? entries[selectionIdx] : null;
+        const bed = entry ? entry.bed : null;
+        const bumps = [
+          { dx: -f.r * 0.55, dy: -f.r * 0.15, fr: f.r * 0.62 },
+          { dx:  f.r * 0.55, dy: -f.r * 0.05, fr: f.r * 0.6 },
+          { dx:  f.r * 0.08, dy: -f.r * 0.65, fr: f.r * 0.55 },
+          { dx: -f.r * 0.18, dy:  f.r * 0.55, fr: f.r * 0.48 },
+        ];
+        return (
+          <g
+            key={i}
+            ref={el => (flowerRefs.current[i] = el)}
+            style={{
+              opacity: 0,
+              transformOrigin: `${f.x}px ${f.y}px`,
+              transformBox: 'fill-box',
+            }}
+          >
+            <circle cx={f.x} cy={f.y} r={f.r} fill={CFG_CREAM} />
+            {bumps.map((b, j) => (
+              <circle key={j} cx={f.x + b.dx} cy={f.y + b.dy} r={b.fr} fill={CFG_CREAM} />
+            ))}
+            {bed && <circle cx={f.x} cy={f.y} r={f.r * 0.36} fill={bed} />}
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -358,15 +510,23 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
   const [swayTick, setSwayTick] = React.useState(0);
   const page = CFG_PAGES[idx];
 
-  // Selections that should show up as flowers. Q3 (personality) is
-  // intentionally excluded — it expresses itself via sway, not blooms.
-  const bloomSelections = React.useMemo(() => [
-    ...(answers.style ? [answers.style] : []),
-    ...(answers.perspectives || []),
-    ...(answers.topics || []),
-  ], [answers]);
+  // Selections that should show up as flowers, tagged with their bed
+  // color. Q3 (personality) is intentionally excluded — it sways the
+  // tree instead of blooming. Q2 (perspectives) blooms plain cream
+  // flowers (no colored bed) so the icon grid reads as its own
+  // category, per design.
+  const bloomEntries = React.useMemo(() => {
+    const out = [];
+    if (answers.style) out.push({ label: answers.style, bed: CFG_COLORS[answers.style] });
+    (answers.perspectives || []).forEach(l => out.push({ label: l, bed: null }));
+    (answers.topics || []).forEach(l => out.push({ label: l, bed: CFG_COLORS[l] }));
+    return out;
+  }, [answers]);
 
-  const baseline = idx === 0 ? 3 : Math.max(3, idx + 2);
+  // Baseline is fixed at 3 so a selection flower stays pinned to its slot
+  // across pages (previously the baseline grew with the page index,
+  // which visually "relocated" already-bloomed flowers).
+  const baseline = 3;
   const isFinal = page.kind === 'done';
 
   const next = () => setIdx(i => Math.min(i + 1, CFG_PAGES.length - 1));
@@ -394,15 +554,14 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
   if (isFinal) {
     return (
       <div style={{ width: 402, height: 874, background: CFG_PINK, position: 'relative', overflow: 'hidden' }}>
-        {/* Full-screen pink sky with the tree sprouting from the bottom.
-            The tree SVG keeps its natural 402×350 size (no scaling so the
-            flowers stay readable); the surrounding pink extends up to
-            fill the rest of the screen. */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 350, zIndex: 0 }}>
-          <ConfigurationTree
+        {/* Full-screen pink sky with a tall tree growing from the bottom.
+            The tall tree occupies the middle band of the phone — trunk
+            draws from bottom up, flowers bloom in sequence as it grows. */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 700, zIndex: 0 }}>
+          <ConfigurationTreeTall
             baseline={baseline}
-            selections={bloomSelections}
-            replay
+            entries={bloomEntries}
+            scheduleKey={idx}
           />
         </div>
 
@@ -448,7 +607,7 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 350 }}>
         <ConfigurationTree
           baseline={baseline}
-          selections={bloomSelections}
+          entries={bloomEntries}
           swayKey={page.sway ? swayTick : undefined}
         />
       </div>
@@ -513,18 +672,26 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
           );
         })()}
 
-        {page.kind === 'icons' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {page.options.map(opt => (
-              <CfgIconCell
-                key={opt}
-                label={opt}
-                selected={(answers[page.id] || []).includes(opt)}
-                onClick={() => toggleMulti(page.id, opt)}
-              />
-            ))}
-          </div>
-        )}
+        {page.kind === 'icons' && (() => {
+          const curr = answers[page.id] || [];
+          const atCap = page.cap != null && curr.length >= page.cap;
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {page.options.map(opt => {
+                const selected = curr.includes(opt);
+                return (
+                  <CfgIconCell
+                    key={opt}
+                    label={opt}
+                    selected={selected}
+                    disabled={atCap && !selected}
+                    onClick={() => toggleMulti(page.id, opt, page.cap)}
+                  />
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       <div
