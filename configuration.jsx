@@ -1,21 +1,25 @@
-// Sundial — Configuration flow (5 pages, post-onboarding)
-// A stylized tree grows on the top half of each screen; every selection
-// blooms a new flower whose "bed" (inner disk) is tinted with the color
-// assigned to that option, Jack-and-the-beanstalk style.
+// Sundial — Configuration flow, snail edition
+// Same 5-page flow as the tree version, but illustrated as a snail
+// sitting on an outstretched hand. Every selection adds a new ring to
+// the shell, so it grows in size, takes on new textures, and (past a
+// threshold) stretches into more elongated shapes.
 
 const CFG_PINK  = '#E84B8C';
-const CFG_KHAKI = '#9B8236';
 const CFG_CREAM = '#EEE8D4';
 const CFG_NIGHT = '#1A1918';
 const CFG_LINE  = '#E2DDD4';
-// Sundial surface color — matches the app's default background; used for
-// the overlaid text/CTA on the final screen per the design system.
 const CFG_SURFACE = '#EBE7DE';
+// Snail-specific palette — echoes the collage reference (navy core,
+// olive/yellow bands, blue outline hand).
+const SNAIL_BODY  = '#3a3836';
+const SNAIL_BELLY = '#6e6a65';
+const SHELL_CORE  = '#1f3a8a';
+const SHELL_GRID  = '#EEE8D4';
+const HAND_STROKE = '#5F7FC2';
+const CUFF_YELLOW = '#E8C832';
+const ACCENT_YELLOW = '#F2D246';
 
-// Palette pulled from the Sundial design tokens. Each accent pill/option
-// gets assigned one of these; the flower bed it blooms inherits the same
-// hex so there's a direct 1:1 between what the user tapped and what
-// lands on the tree.
+// Sundial accent palette (used for per-option shell-ring colors).
 const ACCENTS = {
   plum:   '#855074',
   damson: '#4D675A',
@@ -32,9 +36,6 @@ const ACCENT_CYCLE = [
   ACCENTS.ocean, ACCENTS.sun,
 ];
 
-// Explicit color-per-option map. Q1 follows the Sundial figma exactly;
-// the rest cycle through the accent palette deterministically so each
-// label always lands on the same color.
 const CFG_COLORS = (() => {
   const map = {
     Exploration:           ACCENTS.plum,
@@ -48,8 +49,7 @@ const CFG_COLORS = (() => {
   return map;
 })();
 
-// Glyph lookup for the perspectives grid. Using inline SVGs so we don't
-// need icon fonts; the look is intentionally simple / iconic.
+// Inline glyphs for the Q2 perspectives grid.
 const CFG_GLYPHS = {
   ACT: (<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>),
   CBT: (<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16"/></svg>),
@@ -68,8 +68,6 @@ const CFG_PERSPECTIVES = [
   'Buddhism', 'Christianity', 'Hinduism',
 ];
 
-// Max selections for the personality page — after this the remaining
-// options go inactive and every additional tap just re-sways the tree.
 const PERSONALITY_MAX = 3;
 
 const CFG_PAGES = [
@@ -94,7 +92,7 @@ const CFG_PAGES = [
     subtitle: 'This helps me understand what kinds of lenses I should bring to our conversations.',
     options: CFG_PERSPECTIVES,
     cap: 5,
-    noBeds: true,  // perspective flowers stay plain cream, no colored bed
+    noBeds: true,  // perspective rings stay cream, like the reference shell
   },
   {
     kind: 'multi',
@@ -102,8 +100,8 @@ const CFG_PAGES = [
     title: 'Nice. How about my personality?',
     subtitle: "I'll use this as a guide for how I talk with you, but we can always switch it up later.",
     options: ['Warm', 'Direct', 'Sarcastic', 'Laid-back', 'Quirky', 'Wise', 'Humorous', 'Nerdy'],
-    cap: PERSONALITY_MAX,  // see tweak: capped selection, sways instead of blooming
-    sway: true,
+    cap: PERSONALITY_MAX,
+    sway: true,  // the snail moves on tap instead of growing its shell
   },
   {
     kind: 'multi',
@@ -119,399 +117,286 @@ const CFG_PAGES = [
   },
 ];
 
-// Flower slots on the tree. Earlier slots are big and crown-anchored so
-// the tree never looks bare; later slots get smaller so that extra
-// selections read as "tiny new blooms on new branches" rather than
-// overtaking the canopy (tweak: >5 selections = small flowers/branches
-// instead of figures).
-const CFG_FLOWERS = [
-  { x: 206, y: 92,  r: 50 },   // 0 crown
-  { x: 104, y: 132, r: 42 },   // 1 left upper
-  { x: 300, y: 140, r: 48 },   // 2 right upper
-  { x: 66,  y: 212, r: 38 },   // 3 left mid
-  { x: 334, y: 222, r: 42 },   // 4 right mid
-  { x: 180, y: 184, r: 32 },   // 5 center-left small
-  { x: 240, y: 198, r: 30 },   // 6 center-right small
-  { x: 134, y: 274, r: 30 },   // 7 left lower
-  { x: 268, y: 276, r: 30 },   // 8 right lower
-  // Beyond here: tiny ornaments on offshoot branches.
-  { x: 92,  y: 100, r: 20 },   // 9
-  { x: 324, y: 90,  r: 20 },   // 10
-  { x: 208, y: 148, r: 18 },   // 11
-  { x: 158, y: 96,  r: 18 },   // 12
-  { x: 258, y: 104, r: 16 },   // 13
-  { x: 198, y: 240, r: 18 },   // 14
-  { x: 44,  y: 170, r: 14 },   // 15 tiny far-left
-  { x: 358, y: 188, r: 14 },   // 16 tiny far-right
-  { x: 118, y: 58,  r: 14 },   // 17 tiny high-left
-  { x: 288, y: 58,  r: 14 },   // 18 tiny high-right
-  { x: 170, y: 296, r: 12 },   // 19 tiny low-left
-  { x: 236, y: 296, r: 12 },   // 20 tiny low-right
-];
-// Anything past this index is treated as an "offshoot" — comes with its
-// own tiny branch stub poking out from the trunk.
-const TINY_START = 15;
-
-// Tiny extra branches that only render once the user has gone past the
-// main bloom slots. Paired 1:1 with CFG_FLOWERS[TINY_START...] so each
-// tiny bloom sits on the end of its new little twig.
-const CFG_TINY_BRANCHES = [
-  { d: 'M 64 184 Q 52 176 46 170', w: 6 },
-  { d: 'M 340 200 Q 352 194 358 188', w: 6 },
-  { d: 'M 140 104 Q 128 80 118 58', w: 6 },
-  { d: 'M 272 110 Q 282 84 288 58', w: 6 },
-  { d: 'M 166 284 Q 168 292 170 296', w: 5 },
-  { d: 'M 240 286 Q 238 292 236 296', w: 5 },
-];
-
-// One cotton-puff flower. `bedColor` paints the inner "bed" (the dot of
-// color that marks a flower as user-induced vs a baseline cream bloom).
-function CfgFlower({ x, y, r, bedColor, delay }) {
-  const bumps = [
-    { dx: -r * 0.55, dy: -r * 0.15, fr: r * 0.62 },
-    { dx:  r * 0.55, dy: -r * 0.05, fr: r * 0.6 },
-    { dx:  r * 0.08, dy: -r * 0.65, fr: r * 0.55 },
-    { dx: -r * 0.18, dy:  r * 0.55, fr: r * 0.48 },
-  ];
-  return (
-    <g
-      style={{
-        opacity: 0,
-        animation: `cfgBloom 520ms cubic-bezier(0.2,1.2,0.2,1) ${delay || 0}ms both`,
-        // Scale from the flower's own center so blooms open outward
-        // like a bud (instead of zooming in from a corner).
-        transformOrigin: 'center',
-        transformBox: 'fill-box',
-      }}
-    >
-      <circle cx={x} cy={y} r={r} fill={CFG_CREAM} />
-      {bumps.map((b, i) => (
-        <circle key={i} cx={x + b.dx} cy={y + b.dy} r={b.fr} fill={CFG_CREAM} />
-      ))}
-      {bedColor && (
-        <circle cx={x} cy={y} r={r * 0.36} fill={bedColor} />
-      )}
-    </g>
-  );
-}
-
-// Tree — trunk + branches + progressive flowers. `selections` is an
-// array of option labels in the order they were selected; that order
-// drives both which flower slot opens next and what color its bed is.
-// Per-personality motions — each option gets its own signature movement
-// so tapping "Direct" reads differently from "Wise". Values map to CSS
-// keyframe name, duration (ms), and easing.
+// ── Snail movement keyframes (reused from tree sway) ──────────────
 const PERSONALITY_MOTIONS = {
-  Warm:       { keyframes: 'cfgSwayWarm',      dur: 900, easing: 'cubic-bezier(0.4,0,0.2,1)' },
-  Direct:     { keyframes: 'cfgSwayDirect',    dur: 420, easing: 'cubic-bezier(0.25,0.8,0.25,1)' },
-  Sarcastic:  { keyframes: 'cfgSwaySarcastic', dur: 600, easing: 'cubic-bezier(0.3,0.1,0.3,1)' },
-  'Laid-back':{ keyframes: 'cfgSwayLaidBack',  dur: 1100, easing: 'cubic-bezier(0.45,0.05,0.55,0.95)' },
-  Quirky:     { keyframes: 'cfgSwayQuirky',    dur: 700, easing: 'linear' },
-  Wise:       { keyframes: 'cfgSwayWise',      dur: 1200, easing: 'cubic-bezier(0.45,0,0.55,1)' },
-  Humorous:   { keyframes: 'cfgSwayHumorous',  dur: 650, easing: 'cubic-bezier(0.2,1.4,0.3,1)' },
-  Nerdy:      { keyframes: 'cfgSwayNerdy',     dur: 420, easing: 'linear' },
+  Warm:       { keyframes: 'snailWarm',      dur: 900,  easing: 'cubic-bezier(0.4,0,0.2,1)' },
+  Direct:     { keyframes: 'snailDirect',    dur: 420,  easing: 'cubic-bezier(0.25,0.8,0.25,1)' },
+  Sarcastic:  { keyframes: 'snailSarcastic', dur: 620,  easing: 'cubic-bezier(0.3,0.1,0.3,1)' },
+  'Laid-back':{ keyframes: 'snailLaidBack',  dur: 1100, easing: 'cubic-bezier(0.45,0.05,0.55,0.95)' },
+  Quirky:     { keyframes: 'snailQuirky',    dur: 720,  easing: 'linear' },
+  Wise:       { keyframes: 'snailWise',      dur: 1200, easing: 'cubic-bezier(0.45,0,0.55,1)' },
+  Humorous:   { keyframes: 'snailHumorous',  dur: 680,  easing: 'cubic-bezier(0.2,1.4,0.3,1)' },
+  Nerdy:      { keyframes: 'snailNerdy',     dur: 440,  easing: 'linear' },
 };
 
-// CSS for all the per-option keyframes. Injected once at the top of the
-// Tree SVG so we don't fight React's dedupe.
-const PERSONALITY_KEYFRAMES_CSS = `
-  @keyframes cfgSwayWarm {
-    0%   { transform: rotate(0deg); }
-    50%  { transform: rotate(1.6deg); }
-    100% { transform: rotate(0deg); }
+const SNAIL_KEYFRAMES_CSS = `
+  @keyframes snailWarm {
+    0%   { transform: translateX(0) rotate(0deg); }
+    50%  { transform: translateX(4px) rotate(1.2deg); }
+    100% { transform: translateX(0) rotate(0deg); }
   }
-  @keyframes cfgSwayDirect {
-    0%   { transform: rotate(0deg); }
-    30%  { transform: rotate(4.5deg); }
-    55%  { transform: rotate(2.2deg); }
-    100% { transform: rotate(0deg); }
+  @keyframes snailDirect {
+    0%   { transform: translateX(0) rotate(0deg); }
+    30%  { transform: translateX(14px) rotate(3deg); }
+    55%  { transform: translateX(8px) rotate(1.5deg); }
+    100% { transform: translateX(0) rotate(0deg); }
   }
-  @keyframes cfgSwaySarcastic {
-    0%   { transform: rotate(0deg) translateX(0); }
-    40%  { transform: rotate(-2.8deg) translateX(-3px); }
-    70%  { transform: rotate(1.2deg) translateX(1px); }
-    100% { transform: rotate(0deg) translateX(0); }
+  @keyframes snailSarcastic {
+    0%   { transform: translateX(0) rotate(0deg) skewX(0deg); }
+    40%  { transform: translateX(-6px) rotate(-2deg) skewX(-3deg); }
+    70%  { transform: translateX(2px) rotate(0.6deg) skewX(1deg); }
+    100% { transform: translateX(0) rotate(0deg) skewX(0deg); }
   }
-  @keyframes cfgSwayLaidBack {
-    0%   { transform: rotate(0deg); }
-    25%  { transform: rotate(-3.4deg); }
-    75%  { transform: rotate(3deg); }
-    100% { transform: rotate(0deg); }
+  @keyframes snailLaidBack {
+    0%   { transform: translateY(0) rotate(0deg); }
+    25%  { transform: translateY(-5px) rotate(-2deg); }
+    75%  { transform: translateY(3px) rotate(2deg); }
+    100% { transform: translateY(0) rotate(0deg); }
   }
-  @keyframes cfgSwayQuirky {
-    0%   { transform: rotate(0deg); }
-    15%  { transform: rotate(4deg); }
-    30%  { transform: rotate(-3.2deg); }
-    45%  { transform: rotate(2.6deg); }
-    60%  { transform: rotate(-2deg); }
-    80%  { transform: rotate(1deg); }
-    100% { transform: rotate(0deg); }
+  @keyframes snailQuirky {
+    0%   { transform: translate(0,0) rotate(0deg); }
+    15%  { transform: translate(6px,-3px) rotate(3deg); }
+    30%  { transform: translate(-4px,2px) rotate(-3deg); }
+    45%  { transform: translate(5px,-1px) rotate(2deg); }
+    60%  { transform: translate(-2px,1px) rotate(-1.5deg); }
+    80%  { transform: translate(1px,0) rotate(0.8deg); }
+    100% { transform: translate(0,0) rotate(0deg); }
   }
-  @keyframes cfgSwayWise {
-    0%   { transform: rotate(0deg) translateY(0); }
-    50%  { transform: rotate(0.6deg) translateY(-1.5px); }
-    100% { transform: rotate(0deg) translateY(0); }
+  @keyframes snailWise {
+    0%   { transform: translateY(0) scale(1); }
+    50%  { transform: translateY(-3px) scale(1.015); }
+    100% { transform: translateY(0) scale(1); }
   }
-  @keyframes cfgSwayHumorous {
-    0%   { transform: rotate(0deg)  scale(1); }
-    35%  { transform: rotate(-1deg) scale(0.97); }
-    65%  { transform: rotate(1.5deg) scale(1.03); }
-    100% { transform: rotate(0deg)  scale(1); }
+  @keyframes snailHumorous {
+    0%   { transform: translateY(0) scale(1); }
+    35%  { transform: translateY(-8px) scale(1.04); }
+    65%  { transform: translateY(3px) scale(0.97); }
+    100% { transform: translateY(0) scale(1); }
   }
-  @keyframes cfgSwayNerdy {
-    0%   { transform: rotate(0deg); }
-    12%  { transform: rotate(-2.4deg); }
-    24%  { transform: rotate(2.4deg); }
-    36%  { transform: rotate(-1.8deg); }
-    48%  { transform: rotate(1.8deg); }
-    60%  { transform: rotate(-1deg); }
-    100% { transform: rotate(0deg); }
+  @keyframes snailNerdy {
+    0%   { transform: translateX(0) rotate(0deg); }
+    12%  { transform: translateX(-3px) rotate(-2.5deg); }
+    24%  { transform: translateX(3px) rotate(2.5deg); }
+    36%  { transform: translateX(-2px) rotate(-2deg); }
+    48%  { transform: translateX(2px) rotate(2deg); }
+    100% { transform: translateX(0) rotate(0deg); }
   }
 `;
 
-function ConfigurationTree({ baseline, entries, swayKey, swayLabel }) {
-  const bloomCount = Math.min(CFG_FLOWERS.length, baseline + entries.length);
+// Baseline shell rings — always present, regardless of user selections.
+// These are the "newborn" shell layers in the reference image.
+const BASELINE_RING_COLORS = [
+  '#5F652F',  // olive band
+  '#3B6FC6',  // blue band
+  ACCENT_YELLOW,
+];
+const BASELINE_RING_COUNT = BASELINE_RING_COLORS.length;
+const CORE_RADIUS = 16;    // navy grid core
+const RING_STEP   = 9;     // extra radius per ring
 
-  // When a bloom is past the TINY_START index, we also want its matching
-  // twig visible.
-  const tinyBranchesVisible = Math.max(0, bloomCount - TINY_START);
+// No per-ring textures in this pass — keep each ring a flat color so
+// the selection palette reads clearly. A subtle grid sits only on the
+// navy core of the shell.
+function ringTexture() { return null; }
 
-  // Trigger the sway by resetting the animation imperatively instead of
-  // re-mounting the group (which would replay every flower's bloom).
-  // Each personality option has its own keyframe so the motion feels
-  // distinct per option.
+// Elongate the shell as selections accumulate — up to ~15% stretch so
+// it reads like a "spiral shell shape" forming.
+function shellAspect(entryCount) {
+  const stretch = Math.min(0.18, entryCount * 0.018);
+  return { rx: 1 + stretch, ry: 1 - stretch * 0.5 };
+}
+
+// ── Snail illustration ──────────────────────────────────────────
+function SnailFigure({ entries, swayKey, swayLabel }) {
+  const ringCount = BASELINE_RING_COUNT + entries.length;
+  const aspect = shellAspect(entries.length);
+  const outerR = CORE_RADIUS + ringCount * RING_STEP;
+
   const swayRef = React.useRef(null);
   React.useEffect(() => {
     if (!swayKey || !swayRef.current) return;
     const motion = PERSONALITY_MOTIONS[swayLabel] || {
-      keyframes: 'cfgSwayWarm', dur: 600, easing: 'ease-in-out',
+      keyframes: 'snailWarm', dur: 700, easing: 'ease-in-out',
     };
     const el = swayRef.current;
     el.style.animation = 'none';
-    // force a reflow so the browser registers the reset
     void el.getBoundingClientRect();
     el.style.animation = `${motion.keyframes} ${motion.dur}ms ${motion.easing} both`;
   }, [swayKey, swayLabel]);
 
-  // Tree SVG viewBox is fixed; fullScreen pages render it with
-  // xMidYMax-slice so the trunk anchors to the bottom of the phone.
-  return (
-    <svg
-      viewBox="0 0 402 350"
-      width="100%"
-      height="100%"
-      preserveAspectRatio="xMidYMax meet"
-      style={{ display: 'block', overflow: 'visible' }}
-    >
-      <style>{`
-        @keyframes cfgBloom {
-          0%   { transform: scale(0.2); opacity: 0; }
-          55%  { opacity: 1; }
-          100% { transform: scale(1);   opacity: 1; }
-        }
-        ${PERSONALITY_KEYFRAMES_CSS}
-      `}</style>
-      <rect width="402" height="350" fill={CFG_PINK} />
-      <circle cx="358" cy="46" r="10" fill={CFG_CREAM} />
+  // Shell anchor on the canvas — positioned so the shell sits on top of
+  // the snail body, roughly where it would in the reference image.
+  const SHELL_X = 232;
+  const SHELL_Y = 260;
 
-      {/* Wrap trunk + flowers in a swayable group. Animation is reset
-          imperatively (see useEffect above) so new flowers that just
-          bloomed don't get remounted on every sway trigger. */}
-      <g
-        ref={swayRef}
-        style={{ transformOrigin: '200px 350px' }}
-      >
-        <g stroke={CFG_KHAKI} strokeLinecap="round" fill="none">
-          <path d="M 200 360 C 195 310 215 262 200 218 C 186 178 220 138 206 100" strokeWidth="44" />
-          <path d="M 204 130 Q 154 122 98  132" strokeWidth="22" />
-          <path d="M 210 152 Q 260 146 302 152" strokeWidth="22" />
-          <path d="M 198 214 Q 134 210 70  214" strokeWidth="22" />
-          <path d="M 212 228 Q 280 224 332 222" strokeWidth="20" />
-          <path d="M 200 288 Q 168 282 134 276" strokeWidth="14" />
-          <path d="M 210 292 Q 242 284 272 280" strokeWidth="14" />
-          {CFG_TINY_BRANCHES.slice(0, tinyBranchesVisible).map((b, i) => (
-            <path key={i} d={b.d} strokeWidth={b.w} />
-          ))}
+  // Assemble the rings outermost-first so smaller ones sit on top.
+  const rings = [];
+  for (let i = 0; i < ringCount; i++) {
+    let color, textured;
+    if (i < BASELINE_RING_COUNT) {
+      color = BASELINE_RING_COLORS[i];
+    } else {
+      const entry = entries[i - BASELINE_RING_COUNT];
+      color = (entry && entry.bed) ? entry.bed : CFG_CREAM;
+    }
+    textured = ringTexture(i);
+    rings.push({ color, textured, idx: i });
+  }
+
+  return (
+    <svg viewBox="0 0 402 486" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" style={{ display: 'block' }}>
+      <defs>
+        <pattern id="shellGrid" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+          <rect width="7" height="7" fill={SHELL_GRID} />
+          <path d="M 0 0 L 7 0 M 0 0 L 0 7" stroke={CFG_NIGHT} strokeWidth="0.7" />
+        </pattern>
+        <pattern id="shellDashed" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
+          <rect width="10" height="10" fill={CFG_CREAM} />
+          <path d="M 0 5 H 6" stroke={CFG_NIGHT} strokeWidth="1" />
+        </pattern>
+        <pattern id="shellStipple" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="8" fill={CFG_CREAM} />
+          <circle cx="3" cy="3" r="1" fill={CFG_NIGHT} />
+          <circle cx="7" cy="6" r="0.7" fill={CFG_NIGHT} />
+        </pattern>
+        <filter id="snailGrain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="noise" />
+          <feColorMatrix in="noise" values="0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0 0.06  0 0 0 0.55 0" result="darkNoise" />
+          <feComposite in="darkNoise" in2="SourceGraphic" operator="in" result="inShape" />
+          <feMerge>
+            <feMergeNode in="SourceGraphic" />
+            <feMergeNode in="inShape" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect width="402" height="486" fill={CFG_PINK} />
+
+      {/* Everything the user "is" sits inside swayRef so the snail can
+          animate as one unit without remounting shell layers. */}
+      <g ref={swayRef} style={{ transformOrigin: '232px 340px', transformBox: 'fill-box' }}>
+
+        {/* --- Hand (blue pencil sketch cradling the snail) --- */}
+        <g stroke={HAND_STROKE} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          {/* Sleeve cuff (yellow block) */}
+          <rect x="30" y="448" width="110" height="30" fill={CUFF_YELLOW} stroke="none" />
+          <path d="M 30 448 L 140 448 L 140 478 L 30 478" />
+          {/* Wrist + palm outline */}
+          <path d="M 60 448
+                   Q 60 400 80 378
+                   Q 110 360 160 358
+                   Q 210 357 252 360
+                   Q 286 363 308 372
+                   Q 324 380 332 392" />
+          {/* Index finger curling over */}
+          <path d="M 332 392
+                   Q 340 402 336 416
+                   Q 330 428 316 430
+                   Q 298 432 282 428" />
+          {/* Thumb / knuckle ridge inside */}
+          <path d="M 160 358 Q 168 370 158 388 Q 152 402 162 420" />
+          <path d="M 212 360 Q 216 376 208 390" />
+          <path d="M 258 362 Q 260 378 252 390" />
+          {/* Forearm */}
+          <path d="M 60 448 Q 48 460 40 478" />
         </g>
 
-        {CFG_FLOWERS.slice(0, bloomCount).map((f, i) => {
-          // First `baseline` slots are plain cream "background" flowers;
-          // slots from baseline onward are mapped to user selections.
-          const selectionIdx = i - baseline;
-          const entry = selectionIdx >= 0 ? entries[selectionIdx] : null;
-          const label = entry ? entry.label : '';
-          const bed = entry ? entry.bed : null;
-          return (
-            <CfgFlower
-              key={`${i}-${label}`}
-              x={f.x} y={f.y} r={f.r}
-              bedColor={bed}
-              delay={0}
-            />
-          );
-        })}
-      </g>
-    </svg>
-  );
-}
-
-// Tall tree for the "You're all set" page. Draws the trunk + branches
-// from the bottom upward using stroke-dashoffset animation, then blooms
-// each flower in sequence. The whole tree occupies the middle of the
-// screen (402×700) so the title can breathe above it.
-const TALL_H = 700;
-
-// Scale the short-tree flower positions vertically (~×2.0) so the canopy
-// fills the upper portion of the tall viewport.
-const CFG_FLOWERS_TALL = [
-  { x: 206, y: 184, r: 54 },   // 0 crown
-  { x: 104, y: 264, r: 46 },   // 1 upper-left
-  { x: 300, y: 280, r: 50 },   // 2 upper-right
-  { x: 66,  y: 424, r: 40 },   // 3 mid-left
-  { x: 334, y: 444, r: 44 },   // 4 mid-right
-  { x: 180, y: 368, r: 34 },   // 5 center-left small
-  { x: 240, y: 396, r: 32 },   // 6 center-right small
-  { x: 134, y: 548, r: 32 },   // 7 lower-left
-  { x: 268, y: 552, r: 32 },   // 8 lower-right
-  { x: 92,  y: 200, r: 22 },   // 9 tiny far-left high
-  { x: 324, y: 180, r: 22 },   // 10 tiny far-right high
-  { x: 208, y: 296, r: 20 },   // 11 under-crown
-  { x: 158, y: 192, r: 20 },   // 12 crown-left
-  { x: 258, y: 208, r: 18 },   // 13 crown-right
-  { x: 198, y: 480, r: 20 },   // 14 mid-spine
-];
-
-// Trunk + branch paths for the tall tree. Trunk goes bottom→top so its
-// stroke-dasharray animation reads as "growing up".
-const TALL_TRUNK = 'M 200 720 C 195 600 215 480 200 370 C 186 270 220 160 206 80';
-const TALL_BRANCHES = [
-  { d: 'M 204 240 Q 154 232 98  264',  w: 22, start: 0.74 },  // matches flower 1
-  { d: 'M 210 284 Q 260 272 302 288',  w: 22, start: 0.71 },  // matches flower 2
-  { d: 'M 198 408 Q 134 404 70  420',  w: 22, start: 0.47 },  // matches flower 3
-  { d: 'M 212 440 Q 280 432 332 428',  w: 20, start: 0.43 },  // matches flower 4
-  { d: 'M 200 552 Q 168 540 134 528',  w: 14, start: 0.26 },  // matches flower 7
-  { d: 'M 210 560 Q 242 548 272 540',  w: 14, start: 0.23 },  // matches flower 8
-];
-
-function ConfigurationTreeTall({ entries, baseline, scheduleKey }) {
-  // Total number of flowers the user has earned so far, capped.
-  const bloomCount = Math.min(CFG_FLOWERS_TALL.length, baseline + entries.length);
-  const trunkRef = React.useRef(null);
-  const branchRefs = React.useRef([]);
-  const flowerRefs = React.useRef([]);
-
-  // Kick off the grow-from-bottom choreography on mount (or whenever a
-  // scheduleKey changes, so back-and-forward re-plays the animation).
-  React.useEffect(() => {
-    // Trunk: draw 0→100 over 1600ms.
-    const trunk = trunkRef.current;
-    if (trunk) {
-      trunk.style.animation = 'none';
-      void trunk.getBoundingClientRect();
-      trunk.style.animation = 'cfgGrow 1800ms cubic-bezier(0.2,0.6,0.2,1) both';
-    }
-    // Branches: each begins when trunk visually reaches its y (start
-    // fraction), so upper branches appear later than lower.
-    branchRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const b = TALL_BRANCHES[i];
-      const delay = 1800 * b.start;
-      el.style.animation = 'none';
-      void el.getBoundingClientRect();
-      el.style.animation = `cfgGrow 600ms cubic-bezier(0.2,0.6,0.2,1) ${delay}ms both`;
-    });
-    // Flowers: bloom after the trunk has grown past them. Lower y ↓
-    // (higher on screen) = later delay.
-    flowerRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const f = CFG_FLOWERS_TALL[i];
-      // Map y from the upper canopy band (60…600) to 0…1 progress
-      const trunkProgress = Math.max(0, Math.min(1, (720 - f.y) / (720 - 80)));
-      const delay = 1400 + trunkProgress * 900;
-      el.style.animation = 'none';
-      void el.getBoundingClientRect();
-      el.style.animation = `cfgBloom 560ms cubic-bezier(0.2,1.2,0.2,1) ${delay}ms both`;
-    });
-  }, [scheduleKey]);
-
-  return (
-    <svg
-      viewBox={`0 0 402 ${TALL_H}`}
-      width="100%" height="100%"
-      preserveAspectRatio="xMidYMax meet"
-      style={{ display: 'block' }}
-    >
-      <style>{`
-        /* Start the path invisible and snap to visible once the
-           animation begins, so the rounded linecap doesn't render as a
-           stray dot during the delay period. */
-        @keyframes cfgGrow {
-          0%   { opacity: 0; stroke-dashoffset: 100; }
-          2%   { opacity: 1; stroke-dashoffset: 99;  }
-          100% { opacity: 1; stroke-dashoffset: 0;   }
-        }
-        @keyframes cfgBloom {
-          0%   { transform: scale(0.15); opacity: 0; }
-          55%  { opacity: 1; }
-          100% { transform: scale(1);    opacity: 1; }
-        }
-      `}</style>
-      <rect width="402" height={TALL_H} fill={CFG_PINK} />
-      <g stroke={CFG_KHAKI} strokeLinecap="round" fill="none">
-        <path
-          ref={trunkRef}
-          d={TALL_TRUNK}
-          strokeWidth="46"
-          pathLength="100"
-          strokeDasharray="100"
-          strokeDashoffset="100"
-        />
-        {TALL_BRANCHES.map((b, i) => (
+        {/* --- Snail body (grainy charcoal blob on top of the hand) --- */}
+        <g filter="url(#snailGrain)">
           <path
-            key={i}
-            ref={el => (branchRefs.current[i] = el)}
-            d={b.d}
-            strokeWidth={b.w}
-            pathLength="100"
-            strokeDasharray="100"
-            strokeDashoffset="100"
+            d="M 100 336
+               Q 90 308 110 294
+               Q 140 282 190 284
+               Q 240 286 278 300
+               Q 308 312 322 322
+               Q 336 332 342 336
+               Q 348 338 348 342
+               Q 348 346 342 350
+               Q 334 352 318 350
+               Q 300 348 276 350
+               Q 230 352 180 350
+               Q 130 348 102 348
+               Q 96 346 100 336 Z"
+            fill={SNAIL_BODY}
           />
-        ))}
+          {/* belly highlight */}
+          <path
+            d="M 130 346 Q 180 354 250 350 Q 290 348 316 346 Q 290 352 230 354 Q 170 355 130 346 Z"
+            fill={SNAIL_BELLY}
+            opacity="0.9"
+          />
+        </g>
+
+        {/* --- Head eye + antennae --- */}
+        <g>
+          <circle cx="325" cy="326" r="1.6" fill={CFG_NIGHT} />
+          {/* left antenna */}
+          <path d="M 322 316 Q 314 296 316 276" stroke={CFG_NIGHT} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          <circle cx="316" cy="274" r="3" fill={CFG_NIGHT} />
+          {/* right antenna */}
+          <path d="M 336 316 Q 340 294 348 278" stroke={CFG_NIGHT} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          <circle cx="348" cy="276" r="3" fill={CFG_NIGHT} />
+          {/* tiny mouth line */}
+          <path d="M 332 334 Q 336 336 340 334" stroke={CFG_NIGHT} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        </g>
+
+        {/* --- Shell (concentric rings that grow with selections) --- */}
+        <g transform={`translate(${SHELL_X}, ${SHELL_Y})`}>
+          {/* Render outermost first so smaller rings sit on top. */}
+          {rings.slice().reverse().map((ring) => {
+            const r = CORE_RADIUS + (ring.idx + 1) * RING_STEP;
+            const fill = ring.textured
+              ? `url(#shell${ring.textured[0].toUpperCase() + ring.textured.slice(1)})`
+              : ring.color;
+            return (
+              <ellipse
+                key={ring.idx}
+                cx="0"
+                cy="0"
+                rx={r * aspect.rx}
+                ry={r * aspect.ry}
+                fill={fill}
+                stroke={CFG_NIGHT}
+                strokeWidth="0.5"
+                style={{
+                  opacity: 0,
+                  animation: `snailBloom 380ms cubic-bezier(0.2,1.2,0.2,1) ${ring.idx * 40}ms both`,
+                  transformOrigin: 'center',
+                  transformBox: 'fill-box',
+                }}
+              />
+            );
+          })}
+          {/* Core: navy dot with a grid overlay, like the reference shell. */}
+          <circle cx="0" cy="0" r={CORE_RADIUS} fill={SHELL_CORE} />
+          <circle cx="0" cy="0" r={CORE_RADIUS - 3} fill="url(#shellGrid)" />
+        </g>
       </g>
-      {CFG_FLOWERS_TALL.slice(0, bloomCount).map((f, i) => {
-        const selectionIdx = i - baseline;
-        const entry = selectionIdx >= 0 ? entries[selectionIdx] : null;
-        const bed = entry ? entry.bed : null;
-        const bumps = [
-          { dx: -f.r * 0.55, dy: -f.r * 0.15, fr: f.r * 0.62 },
-          { dx:  f.r * 0.55, dy: -f.r * 0.05, fr: f.r * 0.6 },
-          { dx:  f.r * 0.08, dy: -f.r * 0.65, fr: f.r * 0.55 },
-          { dx: -f.r * 0.18, dy:  f.r * 0.55, fr: f.r * 0.48 },
-        ];
-        return (
-          <g
-            key={i}
-            ref={el => (flowerRefs.current[i] = el)}
-            style={{
-              opacity: 0,
-              transformOrigin: 'center',
-              transformBox: 'fill-box',
-            }}
-          >
-            <circle cx={f.x} cy={f.y} r={f.r} fill={CFG_CREAM} />
-            {bumps.map((b, j) => (
-              <circle key={j} cx={f.x + b.dx} cy={f.y + b.dy} r={b.fr} fill={CFG_CREAM} />
-            ))}
-            {bed && <circle cx={f.x} cy={f.y} r={f.r * 0.36} fill={bed} />}
-          </g>
-        );
-      })}
+
+      <style>{`
+        @keyframes snailBloom {
+          0%   { transform: scale(0.5); opacity: 0; }
+          60%  { opacity: 1; }
+          100% { transform: scale(1);   opacity: 1; }
+        }
+        ${SNAIL_KEYFRAMES_CSS}
+      `}</style>
     </svg>
   );
 }
 
-// CTA button matching Sundial's Bar Button token (see Figma 9490-2317):
-// 18px Google Sans Medium, -0.25 letter spacing, 16px radius, plum bg.
+// Taller version for the final screen — same snail, scaled up and
+// anchored to the bottom of the phone.
+function SnailFigureTall({ entries, scheduleKey }) {
+  // Re-mount on scheduleKey so the animation replays.
+  return (
+    <div key={scheduleKey} style={{ transform: 'scale(1.35)', transformOrigin: 'center bottom', width: '100%', height: '100%' }}>
+      <SnailFigure entries={entries} />
+    </div>
+  );
+}
+
+// ── CTA + option primitives ────────────────────────────────────
 function CfgCta({ children, onClick, style }) {
   return (
     <button
@@ -579,21 +464,16 @@ function CfgIconCell({ label, selected, disabled, onClick }) {
   );
 }
 
+// ── Screen ─────────────────────────────────────────────────────
 function ConfigurationScreen({ onDone, onDismiss, onBack }) {
   const [idx, setIdx] = React.useState(0);
   const [answers, setAnswers] = React.useState({});
-  // Bumped each time the user taps a personality pill so the tree can
-  // re-trigger its sway animation. `swayLabel` is the label of the
-  // option last tapped, so each option drives its own motion.
   const [swayTick, setSwayTick] = React.useState(0);
   const [swayLabel, setSwayLabel] = React.useState(null);
   const page = CFG_PAGES[idx];
 
-  // Selections that should show up as flowers, tagged with their bed
-  // color. Q3 (personality) is intentionally excluded — it sways the
-  // tree instead of blooming. Q2 (perspectives) blooms plain cream
-  // flowers (no colored bed) so the icon grid reads as its own
-  // category, per design.
+  // Selections that grow the shell. Personality taps move the snail
+  // rather than adding rings.
   const bloomEntries = React.useMemo(() => {
     const out = [];
     if (answers.style) out.push({ label: answers.style, bed: CFG_COLORS[answers.style] });
@@ -602,10 +482,6 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
     return out;
   }, [answers]);
 
-  // Baseline is fixed at 3 so a selection flower stays pinned to its slot
-  // across pages (previously the baseline grew with the page index,
-  // which visually "relocated" already-bloomed flowers).
-  const baseline = 3;
   const isFinal = page.kind === 'done';
 
   const next = () => setIdx(i => Math.min(i + 1, CFG_PAGES.length - 1));
@@ -616,7 +492,7 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
 
   const setSingle = (id, v) => setAnswers(prev => ({
     ...prev,
-    [id]: prev[id] === v ? null : v,   // tap-again-to-clear
+    [id]: prev[id] === v ? null : v,
   }));
 
   const toggleMulti = (id, v, cap, sway) => setAnswers(prev => {
@@ -626,35 +502,23 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
       setSwayTick(t => t + 1);
       setSwayLabel(v);
     }
-    if (!has && cap && curr.length >= cap) {
-      // At cap: disallow adding more, but still let the tree sway.
-      return prev;
-    }
+    if (!has && cap && curr.length >= cap) return prev;
     return { ...prev, [id]: has ? curr.filter(x => x !== v) : [...curr, v] };
   });
 
   if (isFinal) {
     return (
       <div style={{ width: 402, height: 874, background: CFG_PINK, position: 'relative', overflow: 'hidden' }}>
-        {/* Full-screen pink sky with a tall tree growing from the bottom.
-            The tall tree occupies the middle band of the phone — trunk
-            draws from bottom up, flowers bloom in sequence as it grows. */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 700, zIndex: 0 }}>
-          <ConfigurationTreeTall
-            baseline={baseline}
-            entries={bloomEntries}
-            scheduleKey={idx}
-          />
+          <SnailFigureTall entries={bloomEntries} scheduleKey={idx} />
         </div>
 
-        {/* Back arrow (requested on every page, including this one). */}
         <div style={{ position: 'absolute', top: 56, left: 12, zIndex: 6 }}>
           <IconBtn onClick={back} style={{ background: 'rgba(255,255,255,0.25)' }}>
             {Ic.arrowBack}
           </IconBtn>
         </div>
 
-        {/* Overlay text — cream color (Sundial surface) over the pink sky. */}
         <div style={{
           position: 'absolute',
           top: 120, left: 0, right: 0,
@@ -672,7 +536,6 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
           </h1>
         </div>
 
-        {/* CTA floats over the image, near the bottom. */}
         <div style={{
           position: 'absolute',
           bottom: 40, left: 20, right: 20,
@@ -686,20 +549,14 @@ function ConfigurationScreen({ onDone, onDismiss, onBack }) {
 
   return (
     <div style={{ width: 402, height: 874, background: CFG_CREAM, position: 'relative', overflow: 'hidden' }}>
-      {/* Tree gets the upper ~55% of the phone so it has room to breathe;
-          title + options live in the lower half, pushed toward the CTA.
-          Pink bg on the container so the sky fills the whole top area
-          above the tree's own canvas. */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 486, background: CFG_PINK }}>
-        <ConfigurationTree
-          baseline={baseline}
+        <SnailFigure
           entries={bloomEntries}
           swayKey={page.sway ? swayTick : undefined}
           swayLabel={page.sway ? swayLabel : undefined}
         />
       </div>
 
-      {/* Back button on every page (intro goes back to the map). */}
       <div style={{ position: 'absolute', top: 56, left: 12, zIndex: 6 }}>
         <IconBtn onClick={back} style={{ background: 'rgba(255,255,255,0.25)' }}>
           {Ic.arrowBack}
