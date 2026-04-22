@@ -85,7 +85,7 @@ function buildRiverPath(points) {
   return segs.join(' ');
 }
 
-function MapScreen({ answers = {}, onBack }) {
+function MapScreen({ answers = {}, onBack, onContinue }) {
   const FRAME_W = 402, FRAME_H = 874;
   const cx = 210, cy = 498;           // river center on the canvas
   const baseR = 70, range = 130;      // distance range: 70 (closest) .. 200 (farthest)
@@ -184,7 +184,7 @@ function MapScreen({ answers = {}, onBack }) {
       {/* Title + subtitle near the bottom */}
       <div style={{
         position: 'absolute',
-        left: 0, right: 0, bottom: 96,
+        left: 0, right: 0, bottom: 128,
         textAlign: 'center',
         padding: '0 24px',
         zIndex: 3,
@@ -201,6 +201,21 @@ function MapScreen({ answers = {}, onBack }) {
           margin: '12px auto 0',
           maxWidth: 300,
         }}>We see your story and hear who you are. This is how we see it.</p>
+      </div>
+
+      {/* Continue CTA */}
+      <div style={{
+        position: 'absolute',
+        left: 16, right: 16, bottom: 48,
+        zIndex: 3,
+      }}>
+        <BarBtn
+          variant="primary"
+          onClick={() => onContinue && onContinue()}
+          style={{ width: '100%' }}
+        >
+          Continue
+        </BarBtn>
       </div>
 
       {/* Back — Sundial IconBtn pattern, sits above the status bar area */}

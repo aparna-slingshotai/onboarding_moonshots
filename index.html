@@ -95,6 +95,7 @@
   <script type="text/babel" src="primitives.jsx"></script>
   <script type="text/babel" src="onboarding.jsx"></script>
   <script type="text/babel" src="map.jsx"></script>
+  <script type="text/babel" src="configuration.jsx"></script>
 
   <script type="text/babel">
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -150,15 +151,24 @@
           <div className="stage">
             <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
               <IOSDevice width={402} height={874}>
-                {screen === 'onboarding' ? (
+                {screen === 'onboarding' && (
                   <OnboardingScreen
                     tweaks={tweaks}
                     onDone={(ans) => { setAnswers(ans); setScreen('map'); }}
                   />
-                ) : (
+                )}
+                {screen === 'map' && (
                   <MapScreen
                     answers={answers}
                     onBack={() => setScreen('onboarding')}
+                    onContinue={() => setScreen('configuration')}
+                  />
+                )}
+                {screen === 'configuration' && (
+                  <ConfigurationScreen
+                    onDone={() => setScreen('map')}
+                    onDismiss={() => setScreen('map')}
+                    onBack={() => setScreen('map')}
                   />
                 )}
               </IOSDevice>
