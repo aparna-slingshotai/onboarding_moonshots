@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Parallax 1</title>
+  <style>
+    html, body {
+      margin: 0; height: 100%;
+      background: #272725;
+      overflow: hidden;
+      font-family: "Google Sans", system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .stage {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }
+
+    .device {
+      position: relative;
+      width: 402px; height: 874px;
+      border-radius: 48px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.18);
+      transform-origin: center center;
+    }
+    .device canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 11px; left: 50%;
+      transform: translateX(-50%);
+      width: 126px; height: 37px;
+      border-radius: 24px;
+      background: #000;
+      z-index: 50;
+      pointer-events: none;
+    }
+    .status-bar {
+      position: absolute;
+      top: 21px; left: 32px; right: 32px;
+      z-index: 45;
+      display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+      font: 590 17px/22px -apple-system, "SF Pro", system-ui;
+      color: #fff;
+      mix-blend-mode: difference;
+    }
+    .status-bar .right { display: flex; gap: 6px; align-items: center; }
+    .home-indicator {
+      position: absolute;
+      bottom: 8px; left: 50%;
+      transform: translateX(-50%);
+      width: 139px; height: 5px;
+      border-radius: 100px;
+      background: rgba(255,255,255,0.7);
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    .panel {
+      position: absolute; left: 12px; right: 12px; bottom: 40px; z-index: 10;
+      background: rgba(246, 243, 237, 0.94);
+      border: 1px solid #DDDAD1;
+      border-radius: 14px;
+      padding: 22px 14px 10px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      font: 500 12px/1.2 "Google Sans", system-ui, sans-serif;
+      color: #1A1918;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(26,25,24,0.18);
+    }
+    .panel .slider {
+      display: flex; flex-direction: column; gap: 4px; flex: 1 1 130px; min-width: 130px;
+    }
+    .panel .slider .label {
+      display: flex; justify-content: space-between;
+      font: 500 10px/1 "Google Sans", system-ui, sans-serif;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      color: #63615D;
+    }
+    .panel input[type=range] {
+      width: 100%; accent-color: #855074; margin: 0;
+    }
+    .panel button {
+      flex: 0 0 auto;
+      background: transparent; border: 1px solid #DDDAD1;
+      border-radius: 9999px;
+      padding: 7px 12px;
+      font: 500 12px/1 "Google Sans", system-ui, sans-serif;
+      color: #464543; cursor: pointer;
+      transition: background 120ms, border-color 120ms, color 120ms;
+    }
+    .panel button:hover { background: rgba(26,25,24,0.06); }
+    .panel button.on { background: #855074; border-color: #855074; color: #EAD7E1; }
+
+    .snail-img {
+      position: absolute;
+      left: 45%;
+      bottom: 35%;
+      width: 200px;
+      height: auto;
+      transform: translateX(-50%) scale(1.4);
+      transform-origin: center bottom;
+      pointer-events: none;
+      z-index: 5;
+      user-select: none;
+      -webkit-user-drag: none;
+      filter: drop-shadow(0 4px 8px rgba(26,25,24,0.22));
+      transition: transform 120ms ease-out;
+    }
+
+    .question-card {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding: 100px 20px 120px;
+      box-sizing: border-box;
+      font-family: "Google Sans", system-ui, sans-serif;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 280ms cubic-bezier(0.2,0,0,1), transform 280ms cubic-bezier(0.2,0,0,1);
+    }
+    .question-card.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .question-card .q-step-circle {
+      width: 34px; height: 34px;
+      border-radius: 9999px;
+      background: rgba(246, 243, 237, 0.92);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      font: 500 13px/1 "Google Sans", sans-serif;
+      color: #1A1918;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .question-card .q-title {
+      font: 500 26px/1.22 "Libre Baskerville", Georgia, serif;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      text-align: center;
+      margin: 0 0 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      max-width: 320px;
+    }
+    .question-card .q-sub {
+      font: 400 13px/1.45 "Google Sans", sans-serif;
+      color: rgba(255,255,255,0.88);
+      text-align: center;
+      margin: 0 0 22px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      max-width: 300px;
+    }
+    .question-card .q-options {
+      width: 100%;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .question-card .q-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      max-width: 340px;
+    }
+    .question-card .q-tile {
+      text-align: left;
+      background: rgba(246, 243, 237, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 14px 16px;
+      min-height: 108px;
+      display: flex; flex-direction: column; gap: 14px;
+      color: rgba(26, 25, 24, 0.50);
+      cursor: pointer;
+      transition: background 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+      font: 500 14px/1.3 "Google Sans", system-ui, sans-serif;
+    }
+    .question-card .q-tile .icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .question-card .q-tile.selected {
+      background: rgba(255, 255, 255, 0.97);
+      color: #1A1918;
+      transform: translateY(-1px);
+    }
+    .question-card .q-tile:hover:not(.selected) {
+      background: rgba(255, 255, 255, 0.90);
+      color: rgba(26, 25, 24, 0.80);
+    }
+    .question-card .q-input {
+      width: 100%; max-width: 340px;
+      border: 0; outline: 0;
+      background: rgba(246, 243, 237, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 16px 18px;
+      border-radius: 16px;
+      font: 400 16px/1.5 "Google Sans", sans-serif;
+      color: #1A1918;
+    }
+    .question-card .q-submit {
+      background: #855074;
+      color: #E6D5E1;
+      border: 0;
+      border-radius: 16px;
+      height: 64px;
+      padding: 10px;
+      width: 100%;
+      max-width: 340px;
+      font: 600 18px/1.2 "Google Sans", sans-serif;
+      letter-spacing: -0.25px;
+      cursor: pointer;
+      transition: background 120ms, opacity 120ms;
+    }
+    .question-card .q-submit:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .question-card .q-submit:hover:not(:disabled) { background: #5F3853; }
+
+    .panel-min {
+      position: absolute;
+      top: 2px; right: 6px;
+      width: 26px; height: 18px;
+      border: 0;
+      background: transparent;
+      color: #63615D;
+      font: 400 14px/18px "Google Sans", system-ui, sans-serif;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0;
+    }
+    .panel-min:hover { background: rgba(26,25,24,0.06); color: #1A1918; }
+
+    .panel.minimized { display: none; }
+
+    .device.question-active .panel,
+    .device.question-active .panel-show { display: none !important; }
+
+    .panel-show {
+      position: absolute;
+      bottom: 48px; right: 12px;
+      z-index: 11;
+      width: 40px; height: 40px;
+      border-radius: 9999px;
+      background: rgba(246, 243, 237, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid #DDDAD1;
+      color: #63615D;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .panel-show.visible { display: flex; }
+    .panel-show:hover { background: #fff; }
+  </style>
+</head>
+<body>
+<div class="stage"><div class="device" id="device">
+<canvas id="c"></canvas>
+<img id="snailImg" class="snail-img" src="assets/snail.png" alt="" />
+
+<div class="dynamic-island"></div>
+<div class="status-bar">
+  <span>9:41</span>
+  <span class="right">
+    <svg width="19" height="12" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="currentColor"/><rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill="currentColor"/><rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill="currentColor"/><rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill="currentColor"/></svg>
+    <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill="currentColor"/><path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill="currentColor"/><circle cx="8.5" cy="10.5" r="1.5" fill="currentColor"/></svg>
+    <svg width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" stroke-opacity="0.5" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill="currentColor"/></svg>
+  </span>
+</div>
+<div class="home-indicator"></div>
+
+<div class="panel minimized">
+  <div class="slider">
+    <span class="label"><span>Speed</span><output id="speedOut">0.30×</output></span>
+    <input type="range" id="speedCtl" min="0" max="3" step="0.05" value="0.3" />
+  </div>
+  <div class="slider">
+    <span class="label"><span>Trail</span><output id="trailOut">35%</output></span>
+    <input type="range" id="trailCtl" min="0" max="1" step="0.05" value="0.35" />
+  </div>
+  <div class="slider">
+    <span class="label"><span>Size</span><output id="sizeOut">1.40×</output></span>
+    <input type="range" id="sizeCtl" min="0.5" max="3" step="0.05" value="1.4" />
+  </div>
+  <button class="panel-min" id="panelMin" aria-label="Minimize controls" title="Minimize">×</button>
+</div>
+<button class="panel-show visible" id="panelShow" aria-label="Show controls" title="Show controls">⚙</button>
+
+<div class="question-card" id="questionCard" role="dialog" aria-modal="true">
+  <div class="q-step-circle" id="qIndex">1</div>
+  <h2 class="q-title" id="qTitle"></h2>
+  <p class="q-sub" id="qSub"></p>
+  <div class="q-options" id="qOptions"></div>
+  <button class="q-submit" id="qSubmit" disabled>Continue</button>
+</div>
+</div></div>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false });
+  if (!gl) { document.body.innerHTML = '<p style="color:#fff;font:14px sans-serif;padding:16px">WebGL2 not available.</p>'; return; }
+
+  const VERT = `#version 300 es
+  in vec2 a_position;
+  void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`;
+
+  const SCENE_FRAG = `#version 300 es
+  precision highp float;
+
+  uniform sampler2D iChannel0;
+  uniform sampler2D iChannel1;
+  uniform vec2  iResolution;
+  uniform float iTime;
+  uniform float uTrailOpacity;
+  uniform float uTrailX;
+  uniform float uTrailY;
+
+  out vec4 fragColor;
+
+  float noise(vec2 x){
+      vec2 f = fract(x);
+      vec2 u = f*f*f*(f*(f*6.0-15.0)+10.0);
+      vec2 p = floor(x);
+      float a = texture(iChannel0, (p+vec2(0.0, 0.0))/1024.0).x;
+      float b = texture(iChannel0, (p+vec2(1.0, 0.0))/1024.0).x;
+      float c = texture(iChannel0, (p+vec2(0.0, 1.0))/1024.0).x;
+      float d = texture(iChannel0, (p+vec2(1.0, 1.0))/1024.0).x;
+      return a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y;
+  }
+
+  float fbm(vec2 x, int detail){
+      float a = 0.0;
+      float b = 1.0;
+      float t = 0.0;
+      for(int i = 0; i < detail; i++){
+          float n = noise(x);
+          a += b*n;
+          t += b;
+          b *= 0.7;
+          x *= 2.0;
+      }
+      return a/t;
+  }
+
+  float fbm2(vec2 x, int detail){
+      float a = 0.0;
+      float b = 1.0;
+      float t = 0.0;
+      for(int i = 0; i < detail; i++){
+          float n = noise(x);
+          a += b*n;
+          t += b;
+          b *= 0.9;
+          x *= 2.0;
+      }
+      return a/t;
+  }
+
+  float box(vec2 uv, float x1, float x2, float y1, float y2){
+      return (uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2)?1.0:0.0;
+  }
+
+  #define dot2(v) dot(v, v)
+  #define layer(dh, v)  if (uv.y < h + midlevel - (dh) ) return vec4(v, 1.);
+
+  vec4 foreground(vec2 uv, float t){
+      float midlevel;
+      float h;
+      float disp;
+      float dist;
+      vec2 uv2;
+
+      uv.y -= 0.2;
+
+      // close grass blades (high-frequency)
+      midlevel = -0.1;
+      disp = 1.7;
+      dist = 1.0;
+      uv2 = vec2(uv.x*3.0, uv.y) + vec2(t/dist + 40.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.12, vec3(0.10, 0.22, 0.12));
+      layer(0.08, vec3(0.15, 0.30, 0.15));
+      layer(0.04, vec3(0.22, 0.40, 0.20));
+      layer(0.0,  vec3(0.30, 0.48, 0.25));
+
+      // mid-close grass tufts
+      midlevel = 0.05;
+      disp = 1.7;
+      dist = 2.0;
+      uv2 = vec2(uv.x*3.0, uv.y) + vec2(t/dist + 38.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1,  vec3(0.25, 0.42, 0.22));
+      layer(0.04, vec3(0.35, 0.52, 0.28));
+      layer(0.0,  vec3(0.42, 0.58, 0.32));
+
+      return vec4(0.42, 0.58, 0.32, 0.0);
+  }
+
+  vec4 background(vec2 uv, float t){
+      float midlevel;
+      float h;
+      float disp;
+      float dist;
+      vec2 uv2;
+
+      // c12 — ground grass + soil edge (closest)
+      midlevel = 0.3;
+      disp = 0.6;
+      dist = 10.0;
+      uv2 = uv + vec2(t/dist + 32.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.14, vec3(0.20, 0.30, 0.15));
+      layer(0.10, vec3(0.28, 0.40, 0.20));
+      layer(0.07, vec3(0.35, 0.50, 0.25));
+      layer(0.0,  vec3(0.42, 0.58, 0.30));
+
+      // c11 — pale grass tops
+      midlevel = 0.35;
+      disp = 0.7;
+      dist = 15.0;
+      uv2 = uv + vec2(t/dist + 30.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.04, vec3(0.45, 0.62, 0.35));
+      layer(0.0,  vec3(0.52, 0.68, 0.40));
+
+      // c10 — rolling grass hills (shadow stack)
+      midlevel = 0.35;
+      disp = 1.0;
+      dist = 20.0;
+      uv2 = uv + vec2(t/dist + 27.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.12, vec3(0.18, 0.32, 0.18));
+      layer(0.08, vec3(0.25, 0.42, 0.24));
+      layer(0.04, vec3(0.32, 0.50, 0.28));
+      layer(0.0,  vec3(0.40, 0.58, 0.32));
+
+      // c9 — near bushes lit
+      midlevel = 0.45;
+      disp = 1.2;
+      dist = 25.0;
+      uv2 = uv + vec2(t/dist + 23.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.04, vec3(0.40, 0.58, 0.35));
+      layer(0.0,  vec3(0.48, 0.65, 0.40));
+
+      // c8 — near bushes (shadow stack)
+      midlevel = 0.5;
+      disp = 1.3;
+      dist = 30.0;
+      uv2 = uv + vec2(t/dist + 20.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.12, vec3(0.15, 0.28, 0.18));
+      layer(0.08, vec3(0.22, 0.38, 0.22));
+      layer(0.04, vec3(0.30, 0.48, 0.28));
+      layer(0.0,  vec3(0.38, 0.55, 0.32));
+
+      // c7 — mid bushes
+      midlevel = 0.55;
+      disp = 1.3;
+      dist = 35.0;
+      uv2 = uv + vec2(t/dist + 18.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1,  vec3(0.28, 0.48, 0.28));
+      layer(0.05, vec3(0.35, 0.55, 0.32));
+      layer(0.0,  vec3(0.42, 0.60, 0.38));
+
+      // c6 — mid bushes lighter
+      midlevel = 0.6;
+      disp = 1.1;
+      dist = 40.0;
+      uv2 = uv + vec2(t/dist + 18.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1, vec3(0.38, 0.54, 0.35));
+      layer(0.0, vec3(0.46, 0.62, 0.42));
+
+      // c5 — mid trees (shadow stack)
+      midlevel = 0.68;
+      disp = 1.4;
+      dist = 45.0;
+      uv2 = uv + vec2(t/dist + 15.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.2,  vec3(0.35, 0.48, 0.38));
+      layer(0.15, vec3(0.42, 0.55, 0.45));
+      layer(0.1,  vec3(0.50, 0.62, 0.52));
+      layer(0.0,  vec3(0.58, 0.70, 0.58));
+
+      // c4 — hazy mid tree line
+      midlevel = 0.72;
+      disp = 1.0;
+      dist = 50.0;
+      uv2 = uv + vec2(t/dist + 12.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.04, vec3(0.55, 0.68, 0.62));
+      layer(0.0,  vec3(0.62, 0.75, 0.68));
+
+      // c3 — distant hazy tree line (nearly sky-tinted)
+      midlevel = 0.78;
+      disp = 0.9;
+      dist = 60.0;
+      uv2 = uv + vec2(t/dist + 9.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1, vec3(0.65, 0.78, 0.72));
+      layer(0.0, vec3(0.72, 0.84, 0.76));
+
+      // c2 — pale mist
+      midlevel = 0.85;
+      disp = 0.8;
+      dist = 70.0;
+      uv2 = uv + vec2(t/dist + 7.0, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1,  vec3(0.74, 0.86, 0.82));
+      layer(0.05, vec3(0.80, 0.90, 0.85));
+      layer(0.0,  vec3(0.86, 0.93, 0.88));
+
+      // c1 — sky mist (farthest)
+      midlevel = 1.0;
+      disp = 1.2;
+      dist = 100.0;
+      uv2 = uv + vec2(t/dist + 3.5, 0.0);
+      h = (fbm(uv2, 8) - 0.5)*disp;
+      layer(0.1, vec3(0.88, 0.93, 0.90));
+      layer(0.0, vec3(0.92, 0.96, 0.93));
+
+      return vec4(0.92, 0.96, 0.93, 1.0);
+  }
+
+  void main() {
+      vec2 fragCoord = gl_FragCoord.xy;
+      vec2 uv = fragCoord / iResolution.y;
+      float t = iTime;
+
+      vec4 bg = background(uv, t);
+
+      vec4 fg = vec4(0.0);
+      const int N = 5;
+      if (uv.y < 0.5) {
+          for (int i = 0; i < N; i++) {
+              fg += foreground(uv, t + 4.0*float(i)/float(N)/60.0) / float(N);
+          }
+      }
+
+      vec3 col = bg.rgb;
+
+      float h;
+      float dist;
+      vec2 uv2;
+      uv.y -= 0.2;
+
+      // pebbles (scattered stones on the ground)
+      dist = 5.0;
+      uv2 = uv + vec2(t/dist + 32.5, 0.0);
+      float tileX = uv2.x * 3.0;
+      float tileId = floor(tileX);
+      vec2 tileUV = vec2(fract(tileX), uv.y);
+      for (int pi = 0; pi < 3; pi++) {
+          float seed = tileId + float(pi) * 113.0;
+          float hx = fract(sin(seed * 12.9898) * 43758.5453);
+          float hy = fract(sin(seed * 78.233)  * 43758.5453);
+          float hr = fract(sin(seed * 39.425)  * 43758.5453);
+          vec2 pc = vec2(0.12 + hx * 0.76, 0.085 + hy * 0.025);
+          float rad = 0.011 + hr * 0.010;
+          vec2 local = (tileUV - pc) * vec2(1.0, 2.2);
+          if (dot(local, local) < rad*rad) {
+              float shade = smoothstep(-rad*0.6, rad*0.3, tileUV.y - pc.y);
+              col = mix(vec3(0.40, 0.34, 0.28), vec3(0.72, 0.66, 0.58), shade);
+          }
+      }
+
+      // slime trail (behind the snail, ground-hugging)
+      dist = 5.0;
+      uv2 = uv + vec2(t/dist + 3.5, 0.0);
+      uv2.x -= t/dist * 0.2;
+      h = fbm2(uv2, 8) - 0.55;
+      if (uv.x < uTrailX) {
+          float x = -uv.x + uTrailX;
+          float y = abs(uv.y + h*0.15 - uTrailY) - 0.010 * exp(-x*4.0);
+          if (y < 0.0)    col = mix(col, vec3(0.94, 0.97, 0.97), uTrailOpacity);
+          if (y < -0.004) col = mix(col, vec3(0.80, 0.88, 0.90), uTrailOpacity * 0.85);
+      }
+
+      // snail is rendered as a DOM <img> overlay on top of the canvas
+
+      col = mix(col, fg.rgb, fg.a);
+
+      // temporal feedback (iChannel1)
+      vec2 screenUv = fragCoord / iResolution.xy;
+      col = mix(col, texture(iChannel1, screenUv).rgb, 0.3);
+
+      fragColor = vec4(col, 1.0);
+  }`;
+
+  const VIGNETTE_FRAG = `#version 300 es
+  precision highp float;
+  uniform sampler2D iChannel0;
+  uniform vec2 iResolution;
+  out vec4 fragColor;
+  void main() {
+      vec2 uv = gl_FragCoord.xy / iResolution.xy;
+      vec3 col = texture(iChannel0, uv).rgb;
+      col *= 0.5 + 0.5*pow( 16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y), 0.2 );
+      fragColor = vec4(col, 1.0);
+  }`;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s), src);
+      throw new Error('shader compile failed');
+    }
+    return s;
+  }
+  function program(vs, fs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    gl.bindAttribLocation(p, 0, 'a_position');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(p));
+      throw new Error('program link failed');
+    }
+    return p;
+  }
+
+  const sceneProg = program(VERT, SCENE_FRAG);
+  const vigProg   = program(VERT, VIGNETTE_FRAG);
+
+  // full-screen quad
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1, -1,  3, -1, -1,  3
+  ]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  // noise texture (1024x1024 random grayscale)
+  function makeNoiseTexture() {
+    const size = 1024;
+    const data = new Uint8Array(size * size * 4);
+    for (let i = 0; i < size * size; i++) {
+      const v = Math.floor(Math.random() * 256);
+      data[i*4+0] = v;
+      data[i*4+1] = v;
+      data[i*4+2] = v;
+      data[i*4+3] = 255;
+    }
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    return tex;
+  }
+  const noiseTex = makeNoiseTexture();
+
+  // ping-pong framebuffers for scene + feedback
+  function makeFBO(w, h) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    return { tex, fbo, w, h };
+  }
+
+  let fboA = null, fboB = null;
+  let sizedW = 0, sizedH = 0;
+
+  const DEVICE_W = 402;
+  const DEVICE_H = 874;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.floor(DEVICE_W * dpr);
+    const h = Math.floor(DEVICE_H * dpr);
+    if (w === sizedW && h === sizedH) return;
+    canvas.width = w;
+    canvas.height = h;
+    sizedW = w; sizedH = h;
+
+    if (fboA) { gl.deleteTexture(fboA.tex); gl.deleteFramebuffer(fboA.fbo); }
+    if (fboB) { gl.deleteTexture(fboB.tex); gl.deleteFramebuffer(fboB.fbo); }
+    fboA = makeFBO(w, h);
+    fboB = makeFBO(w, h);
+  }
+  resize();
+
+  // scale the device to fit the window
+  const deviceEl = document.getElementById('device');
+  function resizeStage() {
+    const pad = 32;
+    const w = window.innerWidth - pad;
+    const h = window.innerHeight - pad;
+    const scale = Math.min(w / DEVICE_W, h / DEVICE_H, 1);
+    deviceEl.style.transform = `scale(${scale})`;
+  }
+  resizeStage();
+  window.addEventListener('resize', resizeStage);
+
+  // uniform locations
+  const uScene_iChannel0  = gl.getUniformLocation(sceneProg, 'iChannel0');
+  const uScene_iChannel1  = gl.getUniformLocation(sceneProg, 'iChannel1');
+  const uScene_iRes       = gl.getUniformLocation(sceneProg, 'iResolution');
+  const uScene_iTime      = gl.getUniformLocation(sceneProg, 'iTime');
+  const uScene_uTrail     = gl.getUniformLocation(sceneProg, 'uTrailOpacity');
+  const uScene_uTrailX    = gl.getUniformLocation(sceneProg, 'uTrailX');
+  const uScene_uTrailY    = gl.getUniformLocation(sceneProg, 'uTrailY');
+
+  const uVig_iChannel0 = gl.getUniformLocation(vigProg, 'iChannel0');
+  const uVig_iRes      = gl.getUniformLocation(vigProg, 'iResolution');
+
+  // control-panel state
+  let speed = 0.3;
+  let trailOpacity = 0.35;
+  let snailScale = 1.4;
+  let virtualTime = 0;
+  let lastReal = performance.now();
+
+  const speedCtl = document.getElementById('speedCtl');
+  const speedOut = document.getElementById('speedOut');
+  const trailCtl = document.getElementById('trailCtl');
+  const trailOut = document.getElementById('trailOut');
+  const sizeCtl  = document.getElementById('sizeCtl');
+  const sizeOut  = document.getElementById('sizeOut');
+
+  speedCtl.addEventListener('input', () => {
+    speed = parseFloat(speedCtl.value);
+    speedOut.textContent = speed.toFixed(2) + '×';
+  });
+  trailCtl.addEventListener('input', () => {
+    trailOpacity = parseFloat(trailCtl.value);
+    trailOut.textContent = Math.round(trailOpacity * 100) + '%';
+  });
+  const snailImg = document.getElementById('snailImg');
+  sizeCtl.addEventListener('input', () => {
+    snailScale = parseFloat(sizeCtl.value);
+    sizeOut.textContent = snailScale.toFixed(2) + '×';
+    snailImg.style.transform = `translateX(-50%) scale(${snailScale})`;
+  });
+
+  // minimize / restore the control panel
+  const panelEl = document.querySelector('.panel');
+  const panelMin = document.getElementById('panelMin');
+  const panelShow = document.getElementById('panelShow');
+  panelMin.addEventListener('click', () => {
+    panelEl.classList.add('minimized');
+    panelShow.classList.add('visible');
+  });
+  panelShow.addEventListener('click', () => {
+    panelEl.classList.remove('minimized');
+    panelShow.classList.remove('visible');
+  });
+
+  // ── Question-stop flow ─────────────────────────────────
+  const STEPS = [
+    { id: 1, question: "What should Ash call you?",
+      subtitle: "We can change this later.",
+      kind: "text", placeholder: "Your name or a nickname" },
+    { id: 2, question: "What brings you to Ash",
+      subtitle: "Pick whatever feels closest. You can choose more than one.",
+      kind: "multi",
+      options: [
+        { label: "A quieter place to think",        icon: "🌿" },
+        { label: "A habit of reflection",           icon: "📓" },
+        { label: "Someone to talk things out with", icon: "💬" },
+        { label: "Curiosity — I'm just looking",    icon: "✨" },
+      ] },
+    { id: 3, question: "How would you like Ash to respond?",
+      subtitle: "We'll lean this way unless you tell us otherwise.",
+      kind: "single",
+      options: [
+        { label: "Gently — long pauses, few questions", icon: "🕊️" },
+        { label: "Conversational — back and forth",     icon: "💬" },
+        { label: "Direct — name what you notice",       icon: "🎯" },
+      ] },
+    { id: 4, question: "When in the day do you want to check in?",
+      subtitle: "A soft prompt, nothing pushy.",
+      kind: "single",
+      options: [
+        { label: "Morning — before the day starts", icon: "🌅" },
+        { label: "Midday — a breather",             icon: "☀️" },
+        { label: "Evening — to wind down",          icon: "🌇" },
+        { label: "Whenever I open the app",         icon: "⏰" },
+      ] },
+  ];
+
+  const FIRST_STOP = 2.5;
+  const BETWEEN_STOP = 4.0;
+  let questionIndex = 0;
+  let asking = false;
+  let nextStopT = FIRST_STOP;
+  let draft = null;
+  const answers = {};
+
+  const card     = document.getElementById('questionCard');
+  const qIndexEl = document.getElementById('qIndex');
+  const qTitle   = document.getElementById('qTitle');
+  const qSub     = document.getElementById('qSub');
+  const qOptions = document.getElementById('qOptions');
+  const qSubmit  = document.getElementById('qSubmit');
+
+  function showQuestion() {
+    const step = STEPS[questionIndex];
+    qIndexEl.textContent = String(step.id);
+    qTitle.textContent = step.question;
+    qSub.textContent = step.subtitle;
+    qOptions.innerHTML = '';
+    qSubmit.textContent = step.id === 4 ? 'Done' : 'Continue';
+    qSubmit.disabled = true;
+
+    if (step.kind === 'text') {
+      draft = '';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'q-input';
+      input.placeholder = step.placeholder;
+      input.addEventListener('input', () => {
+        draft = input.value;
+        qSubmit.disabled = draft.trim() === '';
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !qSubmit.disabled) qSubmit.click();
+      });
+      qOptions.appendChild(input);
+      setTimeout(() => input.focus(), 260);
+    } else if (step.kind === 'single' || step.kind === 'multi') {
+      if (step.kind === 'single') draft = null;
+      else draft = new Set();
+
+      const grid = document.createElement('div');
+      grid.className = 'q-grid';
+      step.options.forEach(opt => {
+        const tile = document.createElement('button');
+        tile.className = 'q-tile';
+        const iconEl = document.createElement('span');
+        iconEl.className = 'icon';
+        iconEl.textContent = opt.icon;
+        const labelEl = document.createElement('span');
+        labelEl.className = 'label';
+        labelEl.textContent = opt.label;
+        tile.appendChild(iconEl);
+        tile.appendChild(labelEl);
+        tile.addEventListener('click', () => {
+          if (step.kind === 'single') {
+            draft = opt.label;
+            [...grid.children].forEach(c => c.classList.remove('selected'));
+            tile.classList.add('selected');
+            qSubmit.disabled = false;
+          } else {
+            if (draft.has(opt.label)) {
+              draft.delete(opt.label);
+              tile.classList.remove('selected');
+            } else {
+              draft.add(opt.label);
+              tile.classList.add('selected');
+            }
+            qSubmit.disabled = draft.size === 0;
+          }
+        });
+        grid.appendChild(tile);
+      });
+      qOptions.appendChild(grid);
+    }
+
+    asking = true;
+    card.classList.add('open');
+    deviceEl.classList.add('question-active');
+  }
+
+  qSubmit.addEventListener('click', () => {
+    if (qSubmit.disabled) return;
+    const step = STEPS[questionIndex];
+    let value;
+    if (step.kind === 'text') value = draft;
+    else if (step.kind === 'single') value = draft;
+    else if (step.kind === 'multi') value = [...draft];
+    answers[step.id] = value;
+
+    card.classList.remove('open');
+    deviceEl.classList.remove('question-active');
+    asking = false;
+    questionIndex += 1;
+    if (questionIndex < STEPS.length) {
+      nextStopT = virtualTime + BETWEEN_STOP;
+    }
+  });
+
+  let read = fboA, write = fboB;
+
+  function frame() {
+    const nowReal = performance.now();
+    const dt = Math.min((nowReal - lastReal) / 1000, 0.1);
+    lastReal = nowReal;
+    if (!asking) virtualTime += dt * speed;
+
+    // trigger the next question stop
+    if (!asking && questionIndex < STEPS.length && virtualTime >= nextStopT) {
+      showQuestion();
+    }
+
+    // Pass 1: scene → write fbo
+    gl.bindFramebuffer(gl.FRAMEBUFFER, write.fbo);
+    gl.viewport(0, 0, write.w, write.h);
+    gl.useProgram(sceneProg);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+    gl.uniform1i(uScene_iChannel0, 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, read.tex);
+    gl.uniform1i(uScene_iChannel1, 1);
+
+    gl.uniform2f(uScene_iRes, write.w, write.h);
+    gl.uniform1f(uScene_iTime, virtualTime);
+    gl.uniform1f(uScene_uTrail, trailOpacity);
+
+    // trail anchor — follows the snail image's tail + foot
+    // snail CSS center: left 45%, bottom 35%; unscaled width 200px, aspect ~1.425
+    // tail is ~10% from image left; foot is ~5% up from image bottom
+    {
+      const snailCenterX = 0.45 * DEVICE_W;
+      const snailBottomY = 0.35 * DEVICE_H;
+      const imgW = 200 * snailScale;
+      const imgH = imgW / 1.425;
+      const tailX = snailCenterX - imgW * 0.40;
+      const tailYFromBottom = snailBottomY + imgH * 0.08;
+      const uvX = tailX / DEVICE_H;
+      const uvYPost = (tailYFromBottom / DEVICE_H) - 0.2;
+      gl.uniform1f(uScene_uTrailX, uvX);
+      gl.uniform1f(uScene_uTrailY, uvYPost);
+    }
+
+    gl.bindVertexArray(vao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    // Pass 2: vignette → screen, sampling write
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(vigProg);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, write.tex);
+    gl.uniform1i(uVig_iChannel0, 0);
+    gl.uniform2f(uVig_iRes, canvas.width, canvas.height);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    const tmp = read; read = write; write = tmp;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
