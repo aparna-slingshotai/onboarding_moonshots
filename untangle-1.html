@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Untangle 1</title>
+  <style>
+    @font-face {
+      font-family: "Google Sans";
+      font-weight: 100 900; font-style: normal;
+      src: url("./fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf") format("truetype-variations");
+    }
+    @font-face {
+      font-family: "Libre Baskerville";
+      font-weight: 400 700; font-style: normal;
+      src: url("./fonts/LibreBaskerville-VariableFont_wght.ttf") format("truetype-variations");
+    }
+
+    html, body {
+      margin: 0; height: 100%;
+      background: #272725;
+      overflow: hidden;
+      font-family: "Google Sans", system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .stage {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }
+
+    .device {
+      position: relative;
+      width: 402px; height: 874px;
+      border-radius: 48px;
+      overflow: hidden;
+      background: #EBE7DE;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.18);
+      transform-origin: center center;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 11px; left: 50%;
+      transform: translateX(-50%);
+      width: 126px; height: 37px;
+      border-radius: 24px;
+      background: #000;
+      z-index: 50;
+      pointer-events: none;
+    }
+    .status-bar {
+      position: absolute;
+      top: 21px; left: 32px; right: 32px;
+      z-index: 45;
+      display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+      font: 590 17px/22px -apple-system, "SF Pro", system-ui;
+      color: #1A1918;
+    }
+    .status-bar .right { display: flex; gap: 6px; align-items: center; }
+    .home-indicator {
+      position: absolute;
+      bottom: 8px; left: 50%;
+      transform: translateX(-50%);
+      width: 139px; height: 5px;
+      border-radius: 100px;
+      background: rgba(26,25,24,0.38);
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    /* ——— Header ——— */
+    .header {
+      position: absolute;
+      top: 61px; left: 50%;
+      transform: translateX(-50%);
+      width: 260px;
+      text-align: center;
+      z-index: 10;
+    }
+    .header .title {
+      font-family: "Libre Baskerville", serif;
+      font-weight: 500;
+      font-size: 32px;
+      line-height: 1.4;
+      letter-spacing: -1px;
+      color: #1A1918;
+      margin: 0 0 12px;
+    }
+    .header .subtitle {
+      font-weight: 425;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #464543;
+      margin: 0;
+    }
+
+    /* ——— Tangle canvas ——— */
+    .tangle-area {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .tangle {
+      position: absolute;
+      opacity: 0;
+      transition: opacity 900ms ease-in-out;
+    }
+    .tangle.on { opacity: 1; }
+
+    /* Each frame has its own bounding box from the Figma design. */
+    .tangle.t-0 { left: -123.32px; top: 232.44px; width: 596.287px; height: 549.09px; }
+    .tangle.t-1,
+    .tangle.t-2,
+    .tangle.t-3 { left: -123.32px; top: 263.4px; width: 596.287px; height: 518.12px; }
+    .tangle.t-4 { left: -123.32px; top: 263.4px; width: 597.82px; height: 728.83px; }
+    .tangle.t-5 { left: 28.41px; top: 263.4px; width: 392.086px; height: 525.74px; }
+
+    .tangle img {
+      width: 100%; height: 100%;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* ——— Dots ——— */
+    .dots-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+    }
+    .dot {
+      position: absolute;
+      width: 40px; height: 40px;
+      border-radius: 100px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Google Sans", sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: -0.1px;
+      background: #DDDAD1;
+      color: #807E7A;
+      border: 1px dashed #807E7A;
+      box-sizing: border-box;
+      cursor: default;
+      transition:
+        left 900ms cubic-bezier(0.33, 1, 0.68, 1),
+        top  900ms cubic-bezier(0.33, 1, 0.68, 1),
+        background 400ms ease-out,
+        color 400ms ease-out,
+        border-color 400ms ease-out,
+        transform 200ms ease-out;
+      user-select: none;
+    }
+    .dot.answered {
+      background: #855074;
+      color: #EBE7DE;
+      border: 1px solid #855074;
+    }
+    .dot.active {
+      cursor: pointer;
+      animation: dot-pulse 1.6s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(133, 80, 116, 0.45);
+    }
+    .dot.active:hover { transform: scale(1.06); }
+    .dot.active:active { transform: scale(0.96); }
+    @keyframes dot-pulse {
+      0%   { box-shadow: 0 0 0 0   rgba(133, 80, 116, 0.55); }
+      70%  { box-shadow: 0 0 0 14px rgba(133, 80, 116, 0);    }
+      100% { box-shadow: 0 0 0 0   rgba(133, 80, 116, 0);    }
+    }
+
+    /* ——— Bottom sheet ——— */
+    .scrim {
+      position: absolute; inset: 0;
+      background: rgba(26, 25, 24, 0.32);
+      opacity: 0;
+      transition: opacity 260ms ease;
+      z-index: 30;
+      pointer-events: none;
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+
+    .sheet {
+      position: absolute;
+      left: 12px; right: 12px; bottom: 40px;
+      z-index: 35;
+      background: #F6F3ED;
+      border: 1px solid #DDDAD1;
+      border-radius: 20px;
+      padding: 20px 20px 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+      transform: translateY(calc(100% + 60px));
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 240ms ease,
+        visibility 0s linear 360ms;
+      color: #1A1918;
+    }
+    .sheet.on {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+      transition:
+        transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 240ms ease,
+        visibility 0s linear 0s;
+    }
+    .sheet .q-num {
+      font-family: "Google Sans", sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #807E7A;
+      margin-bottom: 8px;
+    }
+    .sheet .q-title {
+      font-family: "Libre Baskerville", serif;
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.3;
+      letter-spacing: -0.5px;
+      color: #1A1918;
+      margin: 0 0 6px;
+    }
+    .sheet .q-sub {
+      font-family: "Google Sans", sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #63615D;
+      margin: 0 0 14px;
+    }
+    .sheet input[type="text"] {
+      width: 100%; box-sizing: border-box;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid #DDDAD1;
+      background: #EBE7DE; color: #1A1918;
+      font: 425 15px/1.3 "Google Sans", sans-serif;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    .sheet input[type="text"]:focus { border-color: #855074; }
+
+    .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .option {
+      font: 425 14px/1.35 "Google Sans", sans-serif;
+      color: #1A1918;
+      background: #EBE7DE;
+      border: 1px solid #DDDAD1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms, color 120ms;
+    }
+    .option:hover { background: #E2DED4; }
+    .option.selected {
+      background: #855074;
+      border-color: #855074;
+      color: #EAD7E1;
+    }
+
+    .sheet-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 2px;
+    }
+    .btn {
+      font: 500 14px/1 "Google Sans", sans-serif;
+      padding: 11px 18px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      transition: background 120ms, color 120ms, opacity 120ms;
+    }
+    .btn.ghost {
+      background: transparent; color: #464543;
+    }
+    .btn.ghost:hover { background: rgba(26,25,24,0.06); }
+    .btn.primary {
+      background: #855074; color: #EAD7E1;
+    }
+    .btn.primary:hover { background: #6F3F61; }
+    .btn.primary:disabled {
+      background: #DDDAD1; color: #A2A09A; cursor: default;
+    }
+
+    /* ——— Final CTA ——— */
+    .cta-wrap {
+      position: absolute;
+      left: 24px; right: 24px; bottom: 56px;
+      z-index: 15;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 420ms ease-out, transform 420ms ease-out;
+      pointer-events: none;
+    }
+    .cta-wrap.on {
+      opacity: 1; transform: translateY(0);
+      pointer-events: auto;
+    }
+    .cta-wrap .done-label {
+      font-family: "Libre Baskerville", serif;
+      font-size: 18px;
+      color: #1A1918;
+      margin: 0 0 14px;
+      font-style: italic;
+    }
+    .cta {
+      display: inline-block;
+      font: 500 15px/1 "Google Sans", sans-serif;
+      padding: 14px 28px;
+      border-radius: 100px;
+      background: #855074;
+      color: #EAD7E1;
+      border: none;
+      cursor: pointer;
+      transition: background 120ms, transform 120ms;
+    }
+    .cta:hover { background: #6F3F61; }
+    .cta:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <div class="left">9:41</div>
+        <div class="right">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><path d="M15 1H1v9h14V1zM3 3h10v5H3V3z" fill="currentColor"/></svg>
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.5"/><rect x="4" y="5" width="3" height="6" rx="0.5"/><rect x="8" y="3" width="3" height="8" rx="0.5"/><rect x="12" y="0" width="3" height="11" rx="0.5"/></svg>
+        </div>
+      </div>
+
+      <div class="header">
+        <h1 class="title">Untangle you</h1>
+        <p class="subtitle">Help Ash understand you by untangling some questions</p>
+      </div>
+
+      <div class="tangle-area" id="tangles">
+        <div class="tangle t-0 on"><img src="assets/untangle/tangle-0.svg" alt="" /></div>
+        <div class="tangle t-1"><img src="assets/untangle/tangle-1.svg" alt="" /></div>
+        <div class="tangle t-2"><img src="assets/untangle/tangle-2.svg" alt="" /></div>
+        <div class="tangle t-3"><img src="assets/untangle/tangle-3.svg" alt="" /></div>
+        <div class="tangle t-4"><img src="assets/untangle/tangle-4.svg" alt="" /></div>
+        <div class="tangle t-5"><img src="assets/untangle/tangle-5.svg" alt="" /></div>
+      </div>
+
+      <div class="dots-layer" id="dots"></div>
+
+      <div class="cta-wrap" id="ctaWrap">
+        <p class="done-label">All untangled.</p>
+        <button class="cta" id="ctaContinue">Continue</button>
+      </div>
+
+      <div class="scrim" id="scrim"></div>
+      <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Question definitions =====
+    const QUESTIONS = [
+      {
+        id: 1,
+        title: "What should Ash call you?",
+        subtitle: "We can change this later.",
+        kind: "text",
+        placeholder: "Your name or a nickname",
+      },
+      {
+        id: 2,
+        title: "What brings you to Ash?",
+        subtitle: "Pick whatever feels closest — more than one is fine.",
+        kind: "multi",
+        options: [
+          "A quieter place to think",
+          "A habit of reflection",
+          "Someone to talk things out with",
+          "Curiosity — I'm just looking around",
+        ],
+      },
+      {
+        id: 3,
+        title: "How would you like Ash to respond?",
+        subtitle: "We'll lean this way unless you tell us otherwise.",
+        kind: "single",
+        options: [
+          "Gently — long pauses, few questions",
+          "Conversational — back and forth",
+          "Direct — name what you notice",
+        ],
+      },
+      {
+        id: 4,
+        title: "When in the day do you want to check in?",
+        subtitle: "A soft prompt, nothing pushy.",
+        kind: "single",
+        options: [
+          "Morning — before the day starts",
+          "Midday — a breather",
+          "Evening — to wind down",
+          "Whenever I open the app",
+        ],
+      },
+      {
+        id: 5,
+        title: "How often feels right?",
+        subtitle: "You can change this anytime.",
+        kind: "single",
+        options: [
+          "Daily",
+          "A few times a week",
+          "Weekly",
+          "Only when I reach for it",
+        ],
+      },
+    ];
+
+    // ===== Dot positions per state =====
+    // state 0 = fully tangled (initial), state N = after answering question N.
+    const DOT_POSITIONS = [
+      { // state 0 — all tangled
+        1: { x: 142, y: 328 },
+        2: { x: 306, y: 409 },
+        3: { x: 167, y: 420 },
+        4: { x: 201, y: 498 },
+        5: { x: 241, y: 604 },
+      },
+      { // state 1 — Q1 answered
+        1: { x:  47, y: 243 },
+        2: { x: 306, y: 409 },
+        3: { x: 167, y: 420 },
+        4: { x: 201, y: 498 },
+        5: { x: 241, y: 604 },
+      },
+      { // state 2 — Q2 answered
+        1: { x:  47, y: 243 },
+        2: { x: 299, y: 324 },
+        3: { x: 167, y: 420 },
+        4: { x: 201, y: 498 },
+        5: { x: 241, y: 604 },
+      },
+      { // state 3 — Q3 answered
+        1: { x:  47, y: 243 },
+        2: { x: 299, y: 324 },
+        3: { x:   7, y: 437 },
+        4: { x: 201, y: 498 },
+        5: { x: 241, y: 604 },
+      },
+      { // state 4 — Q4 answered
+        1: { x:  47, y: 243 },
+        2: { x: 299, y: 324 },
+        3: { x:   7, y: 437 },
+        4: { x: 261, y: 388 },
+        5: { x: 241, y: 604 },
+      },
+      { // state 5 — all answered
+        1: { x:  47, y: 243 },
+        2: { x: 299, y: 324 },
+        3: { x:   7, y: 437 },
+        4: { x: 261, y: 388 },
+        5: { x: 204, y: 646 },
+      },
+    ];
+
+    // ===== State =====
+    const state = {
+      step: 0,              // how many questions answered (0..5)
+      answers: {},          // { id: value }
+      openQ: null,          // question id currently in sheet
+    };
+
+    // ===== Render dots =====
+    const dotsLayer = document.getElementById('dots');
+    const dotEls = {};
+    QUESTIONS.forEach(q => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'dot';
+      el.textContent = String(q.id);
+      el.setAttribute('data-id', String(q.id));
+      el.addEventListener('click', () => {
+        if (!el.classList.contains('active')) return;
+        openQuestion(q.id);
+      });
+      dotsLayer.appendChild(el);
+      dotEls[q.id] = el;
+    });
+
+    function paintDots() {
+      const positions = DOT_POSITIONS[state.step];
+      QUESTIONS.forEach(q => {
+        const el = dotEls[q.id];
+        const p = positions[q.id];
+        el.style.left = p.x + 'px';
+        el.style.top  = p.y + 'px';
+
+        const answered = state.answers[q.id] != null && !isEmpty(state.answers[q.id]);
+        const isActive = !answered && q.id === nextUnansweredId();
+
+        el.classList.toggle('answered', answered);
+        el.classList.toggle('active',   isActive);
+      });
+    }
+
+    function isEmpty(v) {
+      if (v == null) return true;
+      if (Array.isArray(v)) return v.length === 0;
+      if (typeof v === 'string') return v.trim() === '';
+      return false;
+    }
+
+    function nextUnansweredId() {
+      for (const q of QUESTIONS) {
+        if (isEmpty(state.answers[q.id])) return q.id;
+      }
+      return null;
+    }
+
+    // ===== Tangle transitions =====
+    function paintTangle() {
+      const layers = document.querySelectorAll('.tangle');
+      layers.forEach((l, i) => l.classList.toggle('on', i === state.step));
+    }
+
+    // ===== Sheet =====
+    const scrim = document.getElementById('scrim');
+    const sheet = document.getElementById('sheet');
+
+    function openQuestion(id) {
+      state.openQ = id;
+      renderSheet();
+      // Force a reflow before adding 'on' so the transition runs from the
+      // hidden state every time (requestAnimationFrame can get coalesced
+      // when a layout change happens in the same frame).
+      void sheet.offsetWidth;
+      scrim.classList.add('on');
+      sheet.classList.add('on');
+    }
+
+    function closeSheet() {
+      scrim.classList.remove('on');
+      sheet.classList.remove('on');
+      state.openQ = null;
+    }
+
+    scrim.addEventListener('click', closeSheet);
+
+    function renderSheet() {
+      const q = QUESTIONS.find(x => x.id === state.openQ);
+      if (!q) { sheet.innerHTML = ''; return; }
+
+      const existing = state.answers[q.id];
+      let draft;
+      if (q.kind === 'text')  draft = typeof existing === 'string' ? existing : '';
+      if (q.kind === 'multi') draft = Array.isArray(existing) ? [...existing] : [];
+      if (q.kind === 'single')draft = typeof existing === 'string' ? existing : null;
+
+      sheet.innerHTML = '';
+
+      const num = document.createElement('div');
+      num.className = 'q-num';
+      num.textContent = `Question ${q.id} of ${QUESTIONS.length}`;
+      sheet.appendChild(num);
+
+      const title = document.createElement('h2');
+      title.className = 'q-title';
+      title.textContent = q.title;
+      sheet.appendChild(title);
+
+      if (q.subtitle) {
+        const sub = document.createElement('p');
+        sub.className = 'q-sub';
+        sub.textContent = q.subtitle;
+        sheet.appendChild(sub);
+      }
+
+      let body;
+      let textInput = null;
+      if (q.kind === 'text') {
+        body = document.createElement('input');
+        body.type = 'text';
+        body.placeholder = q.placeholder || '';
+        body.value = draft;
+        body.addEventListener('input', () => { draft = body.value; refreshSubmit(); });
+        body.addEventListener('change', () => { draft = body.value; refreshSubmit(); });
+        textInput = body;
+        sheet.appendChild(body);
+        setTimeout(() => body.focus(), 120);
+      } else {
+        body = document.createElement('div');
+        body.className = 'options';
+        q.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'option';
+          btn.textContent = opt;
+          const isSel = () => q.kind === 'multi' ? draft.includes(opt) : draft === opt;
+          if (isSel()) btn.classList.add('selected');
+          btn.addEventListener('click', () => {
+            if (q.kind === 'multi') {
+              if (draft.includes(opt)) draft = draft.filter(o => o !== opt);
+              else draft = [...draft, opt];
+            } else {
+              draft = opt;
+            }
+            // repaint selected states
+            body.querySelectorAll('.option').forEach(node => {
+              node.classList.toggle('selected',
+                q.kind === 'multi' ? draft.includes(node.textContent)
+                                   : draft === node.textContent);
+            });
+            refreshSubmit();
+          });
+          body.appendChild(btn);
+        });
+        sheet.appendChild(body);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'sheet-actions';
+
+      const cancel = document.createElement('button');
+      cancel.className = 'btn ghost';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', closeSheet);
+      actions.appendChild(cancel);
+
+      const submit = document.createElement('button');
+      submit.className = 'btn primary';
+      submit.textContent = 'Save';
+      submit.addEventListener('click', () => {
+        if (textInput) draft = textInput.value;
+        if (isEmpty(draft)) return;
+        commitAnswer(q.id, draft);
+      });
+      actions.appendChild(submit);
+      sheet.appendChild(actions);
+
+      function refreshSubmit() {
+        const current = textInput ? textInput.value : draft;
+        submit.disabled = isEmpty(current);
+      }
+      refreshSubmit();
+    }
+
+    function commitAnswer(id, value) {
+      state.answers[id] = value;
+      state.step = Math.max(state.step, answeredCount());
+      closeSheet();
+      paintDots();
+      paintTangle();
+      maybeShowCta();
+    }
+
+    function answeredCount() {
+      return QUESTIONS.filter(q => !isEmpty(state.answers[q.id])).length;
+    }
+
+    // ===== End CTA =====
+    const ctaWrap = document.getElementById('ctaWrap');
+    const ctaContinue = document.getElementById('ctaContinue');
+    ctaContinue.addEventListener('click', () => {
+      ctaContinue.textContent = 'Thanks';
+      setTimeout(() => { ctaContinue.textContent = 'Continue'; }, 1200);
+    });
+
+    function maybeShowCta() {
+      ctaWrap.classList.toggle('on', state.step >= QUESTIONS.length);
+    }
+
+    // ===== Device fit-to-viewport =====
+    const device = document.getElementById('device');
+    function fit() {
+      const pad = 32;
+      const w = window.innerWidth - pad;
+      const h = window.innerHeight - pad;
+      const s = Math.min(w / 402, h / 874, 1);
+      device.style.transform = `scale(${s})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+
+    // ===== Init =====
+    paintDots();
+    paintTangle();
+  </script>
+</body>
+</html>
